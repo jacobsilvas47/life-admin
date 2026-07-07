@@ -39,7 +39,7 @@ export default function DocumentReviewForm({
   }
 
   async function saveChanges() {
-    const res = await fetch(`/api/documents/${documentId}`, {
+    const res = await fetch(`/api/process-document/documents/${documentId}`, {
       method: "PATCH",
       headers: {
         "Content-Type": "application/json",
@@ -59,12 +59,38 @@ export default function DocumentReviewForm({
     return true;
   }
 
-    async function createAsset() {
+  async function createAsset() {
     const saved = await saveChanges();
 
     if (!saved) return;
 
-    alert("Ready to create asset!");
+    const res = await fetch("/api/assets", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        documentId,
+        assetName: form.assetName,
+        manufacturer: form.manufacturer,
+        model: form.model,
+        serialNumber: form.serialNumber,
+        purchaseDate: form.purchaseDate,
+        category: form.category,
+        notes: "",
+      }),
+    });
+
+    const json = await res.json();
+
+    console.log("API Response:", json);
+
+    if (!res.ok || !json.success) {
+      alert(JSON.stringify(json, null, 2));
+      return;
+    }
+
+    window.location.href = `/assets/${json.asset.id}`;
   }
 
   return (
