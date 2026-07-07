@@ -5,6 +5,8 @@ export async function POST(req: Request) {
   try {
     const body = await req.json();
 
+    console.log("Incoming body:", body);
+
     const {
       documentId,
       assetName,
@@ -16,9 +18,11 @@ export async function POST(req: Request) {
       notes,
     } = body;
 
+    console.log("Looking for document:", documentId);
+
     const { data: document, error: documentError } = await supabaseServer
       .from("documents")
-      .select("user_id")
+      .select("id")
       .eq("id", documentId)
       .single();
 
@@ -29,7 +33,6 @@ export async function POST(req: Request) {
     const { data: asset, error } = await supabaseServer
       .from("assets")
       .insert({
-        user_id: document.user_id,
         name: assetName,
         manufacturer,
         model,
