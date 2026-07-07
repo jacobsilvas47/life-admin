@@ -2,7 +2,8 @@ import Link from "next/link";
 
 const navItems = [
   { href: "/dashboard", label: "Dashboard" },
-  { href: "/upload", label: "Scan / Upload" },
+  { href: "/upload", label: "Upload" },
+  { href: "/documents", label: "Documents" },
   { href: "/assets", label: "Assets" },
   { href: "/reminders", label: "Reminders" },
   { href: "/settings", label: "Settings" },

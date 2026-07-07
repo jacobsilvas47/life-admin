@@ -3,8 +3,9 @@ import { supabaseServer } from "@/lib/supabase-server";
 
 export async function PATCH(
   req: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   try {
     const body = await req.json();
 
@@ -13,7 +14,7 @@ export async function PATCH(
       .update({
         extracted_data: body.extracted_data,
       })
-      .eq("id", params.id);
+      .eq("id", id);
 
     if (error) throw error;
 

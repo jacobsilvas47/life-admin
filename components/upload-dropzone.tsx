@@ -22,7 +22,8 @@ export default function UploadDropzone() {
 
       await createDocumentRecord(file, path);
 
-      setMessage("Upload complete!");
+      setMessage(`✅ "${file.name}" uploaded successfully.`);
+
     } catch (err: any) {
       console.error("Upload Error:", err);
 
@@ -64,7 +65,7 @@ export default function UploadDropzone() {
       )}
 
       {message && (
-        <p className="mt-6 whitespace-pre-wrap text-sm">
+        <p className="mt-6 whitespace-pre-wrap text-sm text-green-600">
           {message}
         </p>
       )}

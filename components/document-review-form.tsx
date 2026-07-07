@@ -53,10 +53,18 @@ export default function DocumentReviewForm({
 
     if (!json.success) {
       alert(json.error ?? "Failed to save changes.");
-      return;
+      return false;
     }
 
-    alert("Saved!");
+    return true;
+  }
+
+    async function createAsset() {
+    const saved = await saveChanges();
+
+    if (!saved) return;
+
+    alert("Ready to create asset!");
   }
 
   return (
@@ -75,12 +83,27 @@ export default function DocumentReviewForm({
         Confidence: {Math.round((form.confidence ?? 0) * 100)}%
       </p>
 
-      <button
-        onClick={saveChanges}
-        className="bg-black text-white px-6 py-3 rounded"
-      >
-        Save Changes
-      </button>
+      <div className="flex gap-3 pt-4">
+        <button
+          onClick={async () => {
+            const success = await saveChanges();
+
+            if (success) {
+              alert("Saved!");
+            }
+          }}
+          className="border rounded px-6 py-3 hover:bg-gray-100"
+        >
+          Save Changes
+        </button>
+
+        <button
+          onClick={createAsset}
+          className="bg-black text-white px-6 py-3 rounded"
+        >
+          Create Asset
+        </button>
+      </div>
     </div>
   );
 }

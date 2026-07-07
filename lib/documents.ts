@@ -1,9 +1,11 @@
-import { supabase } from "./supabase";
+import { createClient } from "./supabase";
 
 export async function createDocumentRecord(
   file: File,
   storagePath: string
 ) {
+  const supabase = createClient();
+
   const { data, error } = await supabase
     .from("documents")
     .insert({
