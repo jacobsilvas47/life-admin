@@ -1,6 +1,7 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
+import { DOCUMENT_EXTRACTION_PROMPT } from "@/lib/ai/prompts";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -41,48 +42,50 @@ export async function POST(req: Request) {
       throw new Error(signedUrlError?.message ?? "Could not create signed URL.");
     }
 
+    const userContent: any[] = [
+        {
+          type: "input_text",
+          text: "Analyze this uploaded household document and extract the most useful structured information.",
+        },
+      ];
+
+      if (document.file_type.startsWith("image/")) {
+        userContent.push({
+          type: "input_image",
+          image_url: signedUrlData.signedUrl,
+          detail: "auto",
+        });
+      } else {
+        userContent.push({
+          type: "input_file",
+          file_url: signedUrlData.signedUrl,
+        });
+      }
+
     const response = await openai.responses.create({
       model: "gpt-5-mini",
       input: [
-        {
-          role: "system",
-          content: `
-You extract structured information from household documents.
-
-Return ONLY valid JSON using this schema:
-
-{
-  "documentType": "",
-  "assetName": "",
-  "manufacturer": "",
-  "model": "",
-  "serialNumber": "",
-  "purchaseDate": "",
-  "store": "",
-  "price": null,
-  "warrantyMonths": null,
-  "category": "",
-  "confidence": 0
-}
-`,
-        },
+          {
+            role: "system",
+            content: DOCUMENT_EXTRACTION_PROMPT,
+          },
         {
           role: "user",
-          content: [
-            {
-              type: "input_text",
-              text: "Analyze this uploaded household document and extract the most useful structured information.",
-            },
-            {
-              type: "input_file",
-              file_url: signedUrlData.signedUrl,
-            },
-          ],
+          content: userContent,
         },
       ],
     });
 
-    const extracted = JSON.parse(response.output_text);
+    let extracted;
+
+    try {
+      extracted = JSON.parse(response.output_text);
+    } catch (e) {
+      console.error("Invalid AI response:");
+      console.error(response.output_text);
+
+      throw new Error("The AI returned an invalid response.");
+    }
 
     const { error: updateError } = await supabaseServer
       .from("documents")
