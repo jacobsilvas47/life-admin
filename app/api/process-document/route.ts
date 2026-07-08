@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
 import { DOCUMENT_EXTRACTION_PROMPT } from "@/lib/ai/prompts";
+import { getSuggestedActions } from "@/lib/ai/get-suggested-actions";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -76,16 +77,21 @@ export async function POST(req: Request) {
       ],
     });
 
-    let extracted;
+      let extracted;
 
-    try {
-      extracted = JSON.parse(response.output_text);
-    } catch (e) {
-      console.error("Invalid AI response:");
-      console.error(response.output_text);
+      try {
+        extracted = JSON.parse(response.output_text);
+      } catch {
+        console.error("Invalid AI response:");
+        console.error(response.output_text);
 
-      throw new Error("The AI returned an invalid response.");
-    }
+        throw new Error("The AI returned an invalid response.");
+      }
+
+        extracted.suggestedActions = getSuggestedActions(
+        extracted.documentCategory ?? "general",
+        extracted.documentType ?? ""
+      );
 
     const { error: updateError } = await supabaseServer
       .from("documents")

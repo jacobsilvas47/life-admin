@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { ExtractedDocument } from "@/types/extracted-document";
+import SuggestedActions from "@/components/documents/suggested-actions";
 
 export default function DocumentReviewForm({
   documentId,
@@ -120,21 +121,9 @@ export default function DocumentReviewForm({
         </div>
       </div>
 
-      {form.suggestedActions?.length > 0 && (
-        <div className="border rounded-lg p-4 mb-6">
-          <h2 className="text-lg font-semibold mb-3">
-            Suggested Actions
-          </h2>
-
-          <ul className="space-y-2">
-            {form.suggestedActions.map((action) => (
-              <li key={action}>
-                ✓ {action.replaceAll("_", " ")}
-              </li>
-            ))}
-          </ul>
-        </div>
-      )}
+      <SuggestedActions
+        actions={form.suggestedActions ?? []}
+      />
       
       <Field label="Asset Name" value={form.assetName} onChange={(v) => updateField("assetName", v)} />
       <Field label="Manufacturer" value={form.manufacturer} onChange={(v) => updateField("manufacturer", v)} />
@@ -145,10 +134,6 @@ export default function DocumentReviewForm({
       <Field label="Price" value={form.price?.toString() ?? ""} onChange={(v) => updateField("price", v)} />
       <Field label="Warranty Months" value={form.warrantyMonths?.toString() ?? ""} onChange={(v) => updateField("warrantyMonths", v)} />
       <Field label="Category" value={form.category} onChange={(v) => updateField("category", v)} />
-
-      <p className="text-sm text-gray-500">
-        Confidence: {Math.round((form.confidence ?? 0) * 100)}%
-      </p>
 
       <div className="flex gap-3 pt-4">
         <button
