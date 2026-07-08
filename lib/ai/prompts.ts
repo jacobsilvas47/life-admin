@@ -20,10 +20,34 @@ Extract as much useful structured information as possible.
 
 If a field cannot be determined, leave it empty or null.
 
+Determine what category this document belongs to.
+
+Choose exactly one:
+
+- asset
+- personal
+- financial
+- health
+- pet
+- general
+
+Also provide an array called "suggestedActions".
+
+Possible values include:
+
+- create_asset
+- attach_receipt
+- attach_manual
+- attach_warranty
+- create_renewal_reminder
+- mark_as_important
+- review_manually
+
 Return ONLY valid JSON.
 
 {
   "documentType": "",
+  "documentCategory": "",
   "assetName": "",
   "manufacturer": "",
   "model": "",
@@ -33,6 +57,7 @@ Return ONLY valid JSON.
   "price": null,
   "warrantyMonths": null,
   "category": "",
-  "confidence": 0
+  "confidence": 0,
+  "suggestedActions": []
 }
 `;

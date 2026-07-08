@@ -14,6 +14,7 @@ export default function DocumentReviewForm({
     extractedData ?? {
       documentType: "",
       assetName: "",
+      documentCategory: "",
       manufacturer: "",
       model: "",
       serialNumber: "",
@@ -23,6 +24,7 @@ export default function DocumentReviewForm({
       warrantyMonths: null,
       category: "",
       confidence: 0,
+      suggestedActions: [],
     }
   );
 
@@ -95,6 +97,45 @@ export default function DocumentReviewForm({
 
   return (
     <div className="space-y-4">
+      <div className="border rounded-lg p-4 bg-gray-50 mb-6">
+        <h2 className="text-lg font-semibold">
+          AI Analysis
+        </h2>
+
+        <div className="mt-3 space-y-2">
+          <p>
+            <span className="font-medium">Document Type:</span>{" "}
+            {form.documentType || "Unknown"}
+          </p>
+
+          <p>
+            <span className="font-medium">Category:</span>{" "}
+            {form.documentCategory || "Unknown"}
+          </p>
+
+          <p>
+            <span className="font-medium">Confidence:</span>{" "}
+            {Math.round((form.confidence ?? 0) * 100)}%
+          </p>
+        </div>
+      </div>
+
+      {form.suggestedActions?.length > 0 && (
+        <div className="border rounded-lg p-4 mb-6">
+          <h2 className="text-lg font-semibold mb-3">
+            Suggested Actions
+          </h2>
+
+          <ul className="space-y-2">
+            {form.suggestedActions.map((action) => (
+              <li key={action}>
+                ✓ {action.replaceAll("_", " ")}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      
       <Field label="Asset Name" value={form.assetName} onChange={(v) => updateField("assetName", v)} />
       <Field label="Manufacturer" value={form.manufacturer} onChange={(v) => updateField("manufacturer", v)} />
       <Field label="Model" value={form.model} onChange={(v) => updateField("model", v)} />

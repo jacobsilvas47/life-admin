@@ -10,4 +10,6 @@ export interface ExtractedDocument {
   warrantyMonths: number | null;
   category: string;
   confidence: number;
+  documentCategory: string;
+  suggestedActions: string[];
 }
