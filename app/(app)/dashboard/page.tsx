@@ -23,13 +23,6 @@ const attentionItems = [
   },
 ];
 
-const recentItems = [
-  "Costco appliance receipt",
-  "Home insurance policy",
-  "Toyota registration",
-  "Water heater warranty",
-];
-
 export default async function DashboardPage() {
   const [
     documentsResult,
@@ -48,6 +41,17 @@ export default async function DashboardPage() {
       .from("reminders")
       .select("*", { count: "exact", head: true }),
   ]);
+
+  const { data: activities, error: activitiesError } =
+    await supabaseServer
+      .from("activities")
+      .select("*")
+      .order("created_at", { ascending: false })
+      .limit(5);
+
+  if (activitiesError) {
+    console.error(activitiesError);
+  }
 
   const documentCount = documentsResult.count ?? 0;
   const assetCount = assetsResult.count ?? 0;
@@ -136,11 +140,26 @@ export default async function DashboardPage() {
             <CardTitle>Recently Added</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
-            {recentItems.map((item) => (
-              <div key={item} className="rounded-lg border p-3 text-sm">
-                {item}
-              </div>
-            ))}
+            {activities && activities.length > 0 ? (
+              activities.map((activity) => (
+                <div
+                  key={activity.id}
+                  className="rounded-lg border p-3"
+                >
+                  <p className="font-medium">
+                    {activity.title}
+                  </p>
+
+                  <p className="text-xs text-muted-foreground capitalize">
+                    {activity.activity_type.replaceAll("_", " ")}
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No recent activity.
+              </p>
+            )}
           </CardContent>
         </Card>
       </div>

@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
+import { createActivity } from "@/lib/activity/create-activity";
 
 export async function POST(req: Request) {
   try {
@@ -51,6 +52,17 @@ export async function POST(req: Request) {
       .insert({
         asset_id: asset.id,
         document_id: documentId,
+      });
+
+      await createActivity({
+        assetId: asset.id,
+        documentId,
+        activityType: "asset_created",
+        title: `Created asset: ${asset.name}`,
+        metadata: {
+          manufacturer: asset.manufacturer,
+          category: asset.category,
+        },
       });
 
     return NextResponse.json({

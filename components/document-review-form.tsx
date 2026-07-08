@@ -128,7 +128,7 @@ export default function DocumentReviewForm({
       <Field label="Asset Name" value={form.assetName} onChange={(v) => updateField("assetName", v)} />
       <Field label="Manufacturer" value={form.manufacturer} onChange={(v) => updateField("manufacturer", v)} />
       <Field label="Model" value={form.model} onChange={(v) => updateField("model", v)} />
-      <Field label="Serial Number" value={form.serialNumber} onChange={(v) => updateField("serialNumber", v)} />
+      <Field label="Serial Number" value={form.serialNumber ?? ""} onChange={(v) => updateField("serialNumber", v)} />
       <Field label="Purchase Date" value={form.purchaseDate} onChange={(v) => updateField("purchaseDate", v)} />
       <Field label="Store" value={form.store} onChange={(v) => updateField("store", v)} />
       <Field label="Price" value={form.price?.toString() ?? ""} onChange={(v) => updateField("price", v)} />

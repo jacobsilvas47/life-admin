@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
 import { DOCUMENT_EXTRACTION_PROMPT } from "@/lib/ai/prompts";
 import { getSuggestedActions } from "@/lib/ai/get-suggested-actions";
+import { createActivity } from "@/lib/activity/create-activity";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -104,6 +105,16 @@ export async function POST(req: Request) {
     if (updateError) {
       throw new Error(updateError.message);
     }
+
+    await createActivity({
+      documentId,
+      activityType: "document_processed",
+      title: `Processed ${extracted.documentType || "document"}`,
+      metadata: {
+        category: extracted.documentCategory,
+        confidence: extracted.confidence,
+      },
+    });
 
     return NextResponse.json({
       success: true,
