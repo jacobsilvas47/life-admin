@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { supabaseServer } from "@/lib/supabase-server";
 
 const attentionItems = [
   {
@@ -29,7 +30,29 @@ const recentItems = [
   "Water heater warranty",
 ];
 
-export default function DashboardPage() {
+export default async function DashboardPage() {
+  const [
+    documentsResult,
+    assetsResult,
+    remindersResult,
+  ] = await Promise.all([
+    supabaseServer
+      .from("documents")
+      .select("*", { count: "exact", head: true }),
+
+    supabaseServer
+      .from("assets")
+      .select("*", { count: "exact", head: true }),
+
+    supabaseServer
+      .from("reminders")
+      .select("*", { count: "exact", head: true }),
+  ]);
+
+  const documentCount = documentsResult.count ?? 0;
+  const assetCount = assetsResult.count ?? 0;
+  const reminderCount = remindersResult.count ?? 0;
+
   return (
     <div className="mx-auto max-w-6xl">
       <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
@@ -47,7 +70,7 @@ export default function DashboardPage() {
             <CardTitle className="text-sm font-medium">Documents</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">24</p>
+            <p className="text-3xl font-bold">{documentCount}</p>
             <p className="text-sm text-muted-foreground">stored securely</p>
           </CardContent>
         </Card>
@@ -57,7 +80,7 @@ export default function DashboardPage() {
             <CardTitle className="text-sm font-medium">Assets</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">8</p>
+            <p className="text-3xl font-bold">{assetCount}</p>
             <p className="text-sm text-muted-foreground">tracked items</p>
           </CardContent>
         </Card>
@@ -67,7 +90,7 @@ export default function DashboardPage() {
             <CardTitle className="text-sm font-medium">Reminders</CardTitle>
           </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">6</p>
+            <p className="text-3xl font-bold">{reminderCount}</p>
             <p className="text-sm text-muted-foreground">upcoming</p>
           </CardContent>
         </Card>
