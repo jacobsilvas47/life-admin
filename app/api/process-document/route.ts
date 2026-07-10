@@ -51,6 +51,9 @@ export async function POST(req: Request) {
         },
       ];
 
+      console.log("File type:", document.file_type);
+      console.log("File path:", document.file_path);
+
       if (document.file_type.startsWith("image/")) {
         userContent.push({
           type: "input_image",

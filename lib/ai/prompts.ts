@@ -43,11 +43,36 @@ Possible values include:
 - mark_as_important
 - review_manually
 
+If documentCategory is "personal_record", populate the personal-record fields.
+
+Use one of these recordType values when applicable:
+
+- passport
+- drivers_license
+- birth_certificate
+- marriage_certificate
+- insurance_card
+- vehicle_registration
+- professional_license
+
+For personal records:
+
+- recordTitle should be a readable name such as "United States Passport"
+- issuingCountry should contain the issuing country when visible
+- issueDate and expirationDate must use YYYY-MM-DD when determinable
+- identifier should contain the document or license number when visible
+
 Return ONLY valid JSON.
 
 {
   "documentType": "",
   "documentCategory": "",
+  "recordType": "",
+  "recordTitle": "",
+  "issuingCountry": "",
+  "issueDate": "",
+  "expirationDate": "",
+  "identifier": "",
   "assetName": "",
   "manufacturer": "",
   "model": "",

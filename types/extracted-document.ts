@@ -11,5 +11,11 @@ export interface ExtractedDocument {
   category: string;
   confidence: number;
   documentCategory: string;
+  recordType?: string;
+  recordTitle?: string;
+  issuingCountry?: string;
+  issueDate?: string;
+  expirationDate?: string;
+  identifier?: string;
   suggestedActions: string[];
 }

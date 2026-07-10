@@ -16,6 +16,12 @@ export default function DocumentReviewForm({
       documentType: "",
       assetName: "",
       documentCategory: "",
+      recordType: "",
+      recordTitle: "",
+      issuingCountry: "",
+      issueDate: "",
+      expirationDate: "",
+      identifier: "",
       manufacturer: "",
       model: "",
       serialNumber: "",
@@ -113,6 +119,42 @@ export default function DocumentReviewForm({
             <span className="font-medium">Category:</span>{" "}
             {form.documentCategory || "Unknown"}
           </p>
+
+          {form.recordType && (
+            <p>
+              <span className="font-medium">Record Type:</span>{" "}
+              {form.recordType.replaceAll("_", " ")}
+            </p>
+          )}
+
+          {form.documentCategory === "personal_record" && (
+            <div className="mt-4 space-y-2 border-t pt-4">
+              <p>
+                <span className="font-medium">Record Title:</span>{" "}
+                {form.recordTitle || "Unknown"}
+              </p>
+
+              <p>
+                <span className="font-medium">Issuing Country:</span>{" "}
+                {form.issuingCountry || "Unknown"}
+              </p>
+
+              <p>
+                <span className="font-medium">Issue Date:</span>{" "}
+                {form.issueDate || "Unknown"}
+              </p>
+
+              <p>
+                <span className="font-medium">Expiration Date:</span>{" "}
+                {form.expirationDate || "Unknown"}
+              </p>
+
+              <p>
+                <span className="font-medium">Identifier:</span>{" "}
+                {form.identifier || "Unknown"}
+              </p>
+            </div>
+          )}
 
           <p>
             <span className="font-medium">Confidence:</span>{" "}

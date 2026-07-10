@@ -5,6 +5,7 @@ const navItems = [
   { href: "/upload", label: "Upload" },
   { href: "/documents", label: "Documents" },
   { href: "/assets", label: "Assets" },
+  { href: "/personal-records", label: "Personal Records" }, // 👈 New
   { href: "/reminders", label: "Reminders" },
   { href: "/settings", label: "Settings" },
 ];

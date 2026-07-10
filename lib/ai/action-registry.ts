@@ -6,6 +6,13 @@ export const ACTION_REGISTRY = {
     icon: "📦",
   },
 
+  create_personal_record: {
+    title: "Create Personal Record",
+    description:
+      "Save this document as a secure personal record.",
+    icon: "🪪",
+  },
+
   attach_receipt: {
     title: "Attach Receipt",
     description:
