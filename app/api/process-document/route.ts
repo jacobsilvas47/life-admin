@@ -4,6 +4,7 @@ import { supabaseServer } from "@/lib/supabase-server";
 import { DOCUMENT_EXTRACTION_PROMPT } from "@/lib/ai/prompts";
 import { getSuggestedActions } from "@/lib/ai/get-suggested-actions";
 import { createActivity } from "@/lib/activity/create-activity";
+import { convertHeicToJpeg } from "@/lib/images/convert-heic";
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -45,27 +46,47 @@ export async function POST(req: Request) {
     }
 
     const userContent: any[] = [
-        {
-          type: "input_text",
-          text: "Analyze this uploaded household document and extract the most useful structured information.",
-        },
-      ];
+      {
+        type: "input_text",
+        text: "Analyze this uploaded document and extract the most useful structured information.",
+      },
+    ];
 
-      console.log("File type:", document.file_type);
-      console.log("File path:", document.file_path);
+    const isHeic =
+      document.file_type === "image/heic" ||
+      document.file_type === "image/heif";
 
-      if (document.file_type.startsWith("image/")) {
-        userContent.push({
-          type: "input_image",
-          image_url: signedUrlData.signedUrl,
-          detail: "auto",
-        });
-      } else {
-        userContent.push({
-          type: "input_file",
-          file_url: signedUrlData.signedUrl,
-        });
+    if (isHeic) {
+      const imageResponse = await fetch(signedUrlData.signedUrl);
+
+      if (!imageResponse.ok) {
+        throw new Error("Could not download the HEIC image.");
       }
+
+      const heicBuffer = Buffer.from(
+        await imageResponse.arrayBuffer()
+      );
+
+      const jpegBuffer = await convertHeicToJpeg(heicBuffer);
+      const jpegBase64 = jpegBuffer.toString("base64");
+
+      userContent.push({
+        type: "input_image",
+        image_url: `data:image/jpeg;base64,${jpegBase64}`,
+        detail: "auto",
+      });
+    } else if (document.file_type.startsWith("image/")) {
+      userContent.push({
+        type: "input_image",
+        image_url: signedUrlData.signedUrl,
+        detail: "auto",
+      });
+    } else {
+      userContent.push({
+        type: "input_file",
+        file_url: signedUrlData.signedUrl,
+      });
+    }
 
     const response = await openai.responses.create({
       model: "gpt-5-mini",
