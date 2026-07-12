@@ -73,34 +73,59 @@ export default function DocumentReviewForm({
 
     if (!saved) return;
 
-    const res = await fetch("/api/assets", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
+    console.log("Suggested Actions:", form.suggestedActions);
+    console.log("Context:", {
+      documentId,
+      recordType: form.recordType,
+      recordTitle: form.recordTitle,
+    });
+
+    const res = await fetch("/api/workflows/apply", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      actions: form.suggestedActions,
+      context: {
         documentId,
+
         assetName: form.assetName,
         manufacturer: form.manufacturer,
         model: form.model,
         serialNumber: form.serialNumber,
         purchaseDate: form.purchaseDate,
         category: form.category,
-        notes: "",
-      }),
-    });
+        recordType: form.recordType,
+        recordTitle: form.recordTitle,
+        issuingCountry: form.issuingCountry,
+        issueDate: form.issueDate,
+        expirationDate: form.expirationDate,
+        identifier: form.identifier,
 
-    const json = await res.json();
+        suggestedActions: form.suggestedActions,
+      },
+    }),
+  });
 
-    console.log("API Response:", json);
+  const json = await res.json();
 
-    if (!res.ok || !json.success) {
-      alert(JSON.stringify(json, null, 2));
-      return;
-    }
+  console.log(json);
 
-    window.location.href = `/assets/${json.asset.id}`;
+  if (!json.success) {
+    alert(json.error ?? "Workflow failed.");
+    return;
   }
+
+  alert("Workflow completed!");
+}
+
+const isPersonalRecord =
+  form.recordType && form.recordType.length > 0;
+
+const primaryButtonLabel = isPersonalRecord
+  ? "Create Personal Record"
+  : "Create Asset";
 
   return (
     <div className="space-y-4">
@@ -195,7 +220,7 @@ export default function DocumentReviewForm({
           onClick={createAsset}
           className="bg-black text-white px-6 py-3 rounded"
         >
-          Create Asset
+          {primaryButtonLabel}
         </button>
       </div>
     </div>

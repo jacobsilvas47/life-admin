@@ -22,7 +22,7 @@ const suggestionRules: Record<string, Record<string, string[]>> = {
     ],
   },
 
-  personal_record: {
+  personal: {
     passport: [
       "create_personal_record",
       "create_renewal_reminder",

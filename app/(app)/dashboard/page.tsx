@@ -2,27 +2,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabaseServer } from "@/lib/supabase-server";
 
-const attentionItems = [
-  {
-    title: "Car registration",
-    detail: "Due in 5 days",
-    category: "Vehicle",
-    priority: "Urgent",
-  },
-  {
-    title: "Refrigerator water filter",
-    detail: "Replace this week",
-    category: "Home",
-    priority: "Soon",
-  },
-  {
-    title: "Passport renewal",
-    detail: "Expires in 7 months",
-    category: "Travel",
-    priority: "Upcoming",
-  },
-];
-
 export default async function DashboardPage() {
   const [
     documentsResult,
@@ -42,11 +21,26 @@ export default async function DashboardPage() {
       .select("*", { count: "exact", head: true }),
   ]);
 
+  const { data: upcomingReminders } =
+    await supabaseServer
+      .from("reminders")
+      .select("*")
+      .order("due_date")
+      .limit(5);
+
   const { data: activities, error: activitiesError } =
     await supabaseServer
       .from("activities")
       .select("*")
       .order("created_at", { ascending: false })
+      .limit(5);
+
+  const { data: pendingDocuments } =
+    await supabaseServer
+      .from("documents")
+      .select("id, original_filename, status")
+      .eq("status", "complete")
+      .order("uploaded_at", { ascending: false })
       .limit(5);
 
   if (activitiesError) {
@@ -116,22 +110,30 @@ export default async function DashboardPage() {
             <CardTitle>Needs Attention</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {attentionItems.map((item) => (
-              <div
-                key={item.title}
-                className="flex items-center justify-between rounded-lg border p-4"
-              >
-                <div>
-                  <h3 className="font-medium">{item.title}</h3>
-                  <p className="text-sm text-muted-foreground">{item.detail}</p>
-                </div>
+            {upcomingReminders && upcomingReminders.length > 0 ? (
+              upcomingReminders.map((reminder) => (
+                <div
+                  key={reminder.id}
+                  className="flex items-center justify-between rounded-lg border p-4"
+                >
+                  <div>
+                    <h3 className="font-medium">
+                      {reminder.title}
+                    </h3>
 
-                <div className="flex items-center gap-2">
-                  <Badge variant="secondary">{item.category}</Badge>
-                  <Badge>{item.priority}</Badge>
+                    <p className="text-sm text-muted-foreground">
+                      {reminder.due_date}
+                    </p>
+                  </div>
+
+                  <Badge>Reminder</Badge>
                 </div>
-              </div>
-            ))}
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Nothing needs your attention 🎉
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -158,6 +160,35 @@ export default async function DashboardPage() {
             ) : (
               <p className="text-sm text-muted-foreground">
                 No recent activity.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>AI Review Queue</CardTitle>
+          </CardHeader>
+
+          <CardContent className="space-y-3">
+            {pendingDocuments && pendingDocuments.length > 0 ? (
+              pendingDocuments.map((document) => (
+                <div
+                  key={document.id}
+                  className="rounded-lg border p-3"
+                >
+                  <p className="font-medium">
+                    {document.original_filename}
+                  </p>
+
+                  <p className="text-xs text-muted-foreground">
+                    Ready for review
+                  </p>
+                </div>
+              ))
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                No documents waiting for review.
               </p>
             )}
           </CardContent>

@@ -113,10 +113,14 @@ export async function POST(req: Request) {
         throw new Error("The AI returned an invalid response.");
       }
 
-        extracted.suggestedActions = getSuggestedActions(
-        extracted.documentCategory ?? "general",
-        extracted.documentType ?? ""
+      extracted.suggestedActions = getSuggestedActions(
+        extracted.documentCategory ?? "",
+        extracted.recordType ??
+          extracted.documentType ??
+          ""
       );
+
+      console.log("AI Extraction:", extracted);
 
     const { error: updateError } = await supabaseServer
       .from("documents")

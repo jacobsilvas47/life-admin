@@ -1,5 +1,6 @@
 import { createAssetWorkflow } from "./actions/create-asset";
 import { WorkflowContext } from "./types";
+import { createPersonalRecordWorkflow } from "./actions/create-personal-record";
 
 export type WorkflowAction = (
   context: WorkflowContext
@@ -10,4 +11,5 @@ export const WORKFLOW_REGISTRY: Record<
   WorkflowAction
 > = {
   create_asset: createAssetWorkflow,
+  create_personal_record: createPersonalRecordWorkflow,
 };

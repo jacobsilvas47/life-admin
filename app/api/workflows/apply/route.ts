@@ -1,15 +1,18 @@
 import { NextResponse } from "next/server";
-import { createAsset } from "@/lib/assets/create-asset";
+import { applyAiRecommendations } from "@/lib/workflows/apply-ai-recommendations";
+import { WorkflowContext } from "@/lib/workflows/types";
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
+    const { actions, context } = await req.json();
 
-    const asset = await createAsset(body);
+    await applyAiRecommendations(
+      actions,
+      context as WorkflowContext
+    );
 
     return NextResponse.json({
       success: true,
-      asset,
     });
   } catch (error: any) {
     console.error(error);
