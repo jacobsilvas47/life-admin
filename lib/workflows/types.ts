@@ -2,6 +2,7 @@ export interface WorkflowContext {
   documentId: string;
 
   assetName?: string;
+  assetId?: string;
   manufacturer?: string;
   model?: string;
   serialNumber?: string | null;
@@ -14,6 +15,7 @@ export interface WorkflowContext {
   issueDate?: string;
   expirationDate?: string;
   identifier?: string;
+  personalRecordId?: string;
 
   suggestedActions: string[];
 }

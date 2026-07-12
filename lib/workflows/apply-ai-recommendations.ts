@@ -4,7 +4,10 @@ import { WorkflowContext } from "./types";
 export async function applyAiRecommendations(
   actions: string[],
   context: WorkflowContext
-): Promise<void> {
+): Promise<WorkflowContext> {
+
+  const workflowContext = { ...context };
+
   for (const action of actions) {
     const workflow = WORKFLOW_REGISTRY[action];
 
@@ -13,6 +16,12 @@ export async function applyAiRecommendations(
       continue;
     }
 
-    await workflow(context);
+    const updates = await workflow(workflowContext);
+
+    if (updates) {
+      Object.assign(workflowContext, updates);
+    }
   }
+
+  return workflowContext;
 }

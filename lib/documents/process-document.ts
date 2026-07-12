@@ -89,9 +89,9 @@ export async function POST(req: Request) {
         throw new Error("The AI returned an invalid response.");
       }
 
-        extracted.suggestedActions = getSuggestedActions(
+      extracted.suggestedActions = getSuggestedActions(
         extracted.documentCategory ?? "general",
-        extracted.documentType ?? ""
+        extracted.recordType ?? extracted.documentType ?? ""
       );
 
     const { error: updateError } = await supabaseServer

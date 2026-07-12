@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase-server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import DocumentPreview from "@/components/documents/document-preview";
 
 export default async function PersonalRecordPage({
   params,
@@ -77,39 +78,23 @@ export default async function PersonalRecordPage({
         </CardContent>
       </Card>
 
-      <Card>
+        <Card>
         <CardHeader>
             <CardTitle>Original Document</CardTitle>
         </CardHeader>
 
         <CardContent>
-
-            {documentUrl ? (
-
-            <div className="space-y-4">
-
-                <p className="font-medium">
-                {record.documents.file_name}
-                </p>
-
-                <a
-                href={documentUrl}
-                target="_blank"
-                className="text-blue-600 underline"
-                >
-                Open Document
-                </a>
-
-            </div>
-
+            {documentUrl && record.documents ? (
+            <DocumentPreview
+                fileName={record.documents.file_name}
+                fileType={record.documents.file_type}
+                signedUrl={documentUrl}
+            />
             ) : (
-
             <p className="text-muted-foreground">
                 No document attached.
             </p>
-
             )}
-
         </CardContent>
         </Card>
     </main>

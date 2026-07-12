@@ -72,11 +72,12 @@ export function getSuggestedActions(
     .trim()
     .replaceAll(" ", "_");
 
-  const type = documentType
-    .toLowerCase()
-    .trim()
-    .replaceAll(" ", "_")
-    .replaceAll("'", "");
+const type = documentType
+  .toLowerCase()
+  .trim()
+  .replaceAll(" ", "_")
+  .replaceAll("-", "_")
+  .replaceAll("'", "");
 
   return suggestionRules[category]?.[type] ?? ["review_manually"];
 }

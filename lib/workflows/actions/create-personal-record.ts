@@ -22,5 +22,7 @@ export async function createPersonalRecordWorkflow(
     metadata: {},
   });
 
-  return record;
+    return {
+    personalRecordId: record.id,
+    };
 }

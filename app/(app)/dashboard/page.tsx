@@ -1,6 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabaseServer } from "@/lib/supabase-server";
+import { getRelativeDate } from "@/lib/date/get-relative-date";
+import Link from "next/link";
 
 export default async function DashboardPage() {
   const [
@@ -24,7 +26,13 @@ export default async function DashboardPage() {
   const { data: upcomingReminders } =
     await supabaseServer
       .from("reminders")
-      .select("*")
+      .select(`
+        *,
+        personal_records (
+          id,
+          title
+        )
+      `)
       .order("due_date")
       .limit(5);
 
@@ -50,6 +58,12 @@ export default async function DashboardPage() {
   const documentCount = documentsResult.count ?? 0;
   const assetCount = assetsResult.count ?? 0;
   const reminderCount = remindersResult.count ?? 0;
+
+  const reminders =
+  upcomingReminders?.map((reminder) => ({
+    ...reminder,
+    relative: getRelativeDate(reminder.due_date),
+  })) ?? [];
 
   return (
     <div className="mx-auto max-w-6xl">
@@ -110,24 +124,40 @@ export default async function DashboardPage() {
             <CardTitle>Needs Attention</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {upcomingReminders && upcomingReminders.length > 0 ? (
-              upcomingReminders.map((reminder) => (
-                <div
-                  key={reminder.id}
-                  className="flex items-center justify-between rounded-lg border p-4"
-                >
+            {reminders.length > 0 ? (
+              reminders.map((reminder) => (
+              <Link
+                key={reminder.id}
+                href={`/personal-records/${reminder.personal_record_id}`}
+                className="block"
+              >
+                <div className="flex items-center justify-between rounded-lg border p-4 hover:bg-muted/50 transition-colors">
                   <div>
                     <h3 className="font-medium">
                       {reminder.title}
                     </h3>
 
-                    <p className="text-sm text-muted-foreground">
-                      {reminder.due_date}
+                   <p className="text-sm text-muted-foreground">
+                      {reminder.relative.text}
                     </p>
                   </div>
-
-                  <Badge>Reminder</Badge>
+                  <Badge
+                    variant={
+                      reminder.relative.priority === "high"
+                        ? "destructive"
+                        : reminder.relative.priority === "medium"
+                        ? "secondary"
+                        : "outline"
+                    }
+                  >
+                    {reminder.relative.priority === "high"
+                      ? "High"
+                      : reminder.relative.priority === "medium"
+                      ? "Soon"
+                      : "Upcoming"}
+                  </Badge>
                 </div>
+                </Link>
               ))
             ) : (
               <p className="text-sm text-muted-foreground">

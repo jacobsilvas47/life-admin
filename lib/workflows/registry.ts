@@ -1,10 +1,11 @@
 import { createAssetWorkflow } from "./actions/create-asset";
 import { WorkflowContext } from "./types";
 import { createPersonalRecordWorkflow } from "./actions/create-personal-record";
+import { createReminderWorkflow } from "./actions/create-reminder";
 
 export type WorkflowAction = (
   context: WorkflowContext
-) => Promise<void>;
+) => Promise<Partial<WorkflowContext> | void>;
 
 export const WORKFLOW_REGISTRY: Record<
   string,
@@ -12,4 +13,5 @@ export const WORKFLOW_REGISTRY: Record<
 > = {
   create_asset: createAssetWorkflow,
   create_personal_record: createPersonalRecordWorkflow,
+  create_renewal_reminder: createReminderWorkflow,
 };
