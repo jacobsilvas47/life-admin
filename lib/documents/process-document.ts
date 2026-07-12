@@ -91,7 +91,7 @@ export async function POST(req: Request) {
 
       extracted.suggestedActions = getSuggestedActions(
         extracted.documentCategory ?? "general",
-        extracted.recordType ?? extracted.documentType ?? ""
+        (extracted.recordType || extracted.documentType || "")
       );
 
     const { error: updateError } = await supabaseServer
