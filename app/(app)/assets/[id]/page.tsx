@@ -3,6 +3,7 @@ import { supabaseServer } from "@/lib/supabase-server";
 import AssetHeader from "@/components/assets/asset-header";
 import AssetOverview from "@/components/assets/asset-overview";
 import AssetDocuments from "@/components/assets/asset-documents";
+import AssetWarranties from "@/components/assets/asset-warranties";
 
 export default async function AssetDetailsPage({
   params,
@@ -13,7 +14,10 @@ export default async function AssetDetailsPage({
 
   const { data: asset, error } = await supabaseServer
     .from("assets")
-    .select("*")
+    .select(`
+      *,
+      warranties (*)
+    `)
     .eq("id", id)
     .single();
 
@@ -26,6 +30,8 @@ export default async function AssetDetailsPage({
       <AssetHeader asset={asset} />
 
       <AssetOverview asset={asset} />
+
+      <AssetWarranties warranties={asset.warranties ?? []} />
 
       <AssetDocuments assetId={asset.id} />
     </main>

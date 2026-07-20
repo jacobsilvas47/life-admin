@@ -20,10 +20,10 @@ export const ACTION_REGISTRY = {
     icon: "📄",
   },
 
-  add_warranty: {
-    title: "Save Warranty",
+  attach_warranty: {
+    title: "Attach Warranty",
     description:
-      "Store warranty information for future reminders.",
+      "Attach this warranty to the asset.",
     icon: "🛡️",
   },
 

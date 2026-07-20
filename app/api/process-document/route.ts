@@ -115,9 +115,7 @@ export async function POST(req: Request) {
 
       extracted.suggestedActions = getSuggestedActions(
         extracted.documentCategory ?? "",
-        extracted.recordType ??
-          extracted.documentType ??
-          ""
+        extracted.recordType || extracted.documentType || ""
       );
 
       console.log("AI Extraction:", extracted);

@@ -17,6 +17,7 @@ const suggestionRules: Record<string, Record<string, string[]>> = {
     manual: ["attach_manual"],
 
     warranty: [
+      "create_asset",
       "attach_warranty",
       "create_warranty_reminder",
     ],

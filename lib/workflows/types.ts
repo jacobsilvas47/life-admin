@@ -16,6 +16,8 @@ export interface WorkflowContext {
   expirationDate?: string;
   identifier?: string;
   personalRecordId?: string;
+  warrantyMonths?: number | null;
+  warrantyId?: string;
 
   suggestedActions: string[];
 }

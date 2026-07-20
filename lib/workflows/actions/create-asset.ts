@@ -4,7 +4,7 @@ import { WorkflowContext } from "../types";
 export async function createAssetWorkflow(
   context: WorkflowContext
 ) {
-  await createAsset({
+  const asset = await createAsset({
     documentId: context.documentId,
     assetName: context.assetName ?? "",
     manufacturer: context.manufacturer,
@@ -14,4 +14,8 @@ export async function createAssetWorkflow(
     category: context.category,
     notes: "",
   });
+
+  return {
+    assetId: asset.id,
+  };
 }
