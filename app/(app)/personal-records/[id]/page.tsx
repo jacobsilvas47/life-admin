@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase-server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import DocumentPreview from "@/components/documents/document-preview";
+import DocumentViewer from "@/components/documents/document-viewer";
+import BackButton from "@/components/ui/back-button";
 
 export default async function PersonalRecordPage({
   params,
@@ -38,6 +40,10 @@ export default async function PersonalRecordPage({
 
   return (
     <main className="max-w-5xl mx-auto p-8 space-y-6">
+      <BackButton
+        fallbackHref="/personal-records"
+        label="Back to Personal Records"
+      />
       <div>
         <h1 className="text-3xl font-bold">
           {record.title}

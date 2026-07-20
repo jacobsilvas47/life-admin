@@ -4,6 +4,7 @@ import AssetHeader from "@/components/assets/asset-header";
 import AssetOverview from "@/components/assets/asset-overview";
 import AssetDocuments from "@/components/assets/asset-documents";
 import AssetWarranties from "@/components/assets/asset-warranties";
+import BackButton from "@/components/ui/back-button";
 
 export default async function AssetDetailsPage({
   params,
@@ -27,6 +28,11 @@ export default async function AssetDetailsPage({
 
   return (
     <main className="max-w-4xl mx-auto p-8 space-y-6">
+      <BackButton
+        fallbackHref="/assets"
+        label="Back to Assets"
+      />
+      
       <AssetHeader asset={asset} />
 
       <AssetOverview asset={asset} />

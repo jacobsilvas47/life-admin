@@ -1,3 +1,5 @@
+import SectionCard from "@/components/ui/section-card";
+
 type Asset = {
   manufacturer: string | null;
   model: string | null;
@@ -14,12 +16,13 @@ function Row({
   value: string | null;
 }) {
   return (
-    <div className="flex justify-between py-3 border-b last:border-b-0">
-      <span className="font-medium text-gray-600">
+    <div className="flex items-center justify-between py-3 border-b last:border-0">
+      <span className="text-sm font-medium text-muted-foreground">
         {label}
       </span>
-
-      <span>{value || "—"}</span>
+      <span className="font-medium">
+        {value || "—"}
+      </span>
     </div>
   );
 }
@@ -30,16 +33,15 @@ export default function AssetOverview({
   asset: Asset;
 }) {
   return (
-    <section className="border rounded-xl p-6 bg-white shadow-sm">
-      <h2 className="text-xl font-semibold mb-4">
-        Overview
-      </h2>
-
+    <SectionCard
+      title="Overview"
+      description="Basic information about this asset."
+    >
       <Row label="Manufacturer" value={asset.manufacturer} />
       <Row label="Model" value={asset.model} />
       <Row label="Serial Number" value={asset.serial_number} />
       <Row label="Purchase Date" value={asset.purchase_date} />
       <Row label="Category" value={asset.category} />
-    </section>
+    </SectionCard>
   );
 }

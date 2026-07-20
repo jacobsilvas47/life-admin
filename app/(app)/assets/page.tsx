@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { supabaseServer } from "@/lib/supabase-server";
+import AssetsList from "@/components/assets/assets-list";
 
 export default async function AssetsPage() {
   const { data: assets, error } = await supabaseServer
@@ -25,35 +26,7 @@ export default async function AssetsPage() {
       <p className="text-gray-500 mb-8">
         Track your home, vehicles, appliances, electronics, and more.
       </p>
-
-      {assets.length === 0 ? (
-        <div className="border rounded-lg p-8 text-center text-gray-500">
-          No assets yet.
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {assets.map((asset) => (
-            <Link
-              key={asset.id}
-              href={`/assets/${asset.id}`}
-              className="block border rounded-lg p-5 hover:bg-gray-50 transition"
-            >
-              <h2 className="text-xl font-semibold">
-                {asset.name}
-              </h2>
-
-              <p className="text-gray-600 mt-1">
-                {asset.manufacturer || "Unknown Manufacturer"}
-              </p>
-
-              <div className="mt-3 flex gap-6 text-sm text-gray-500">
-                <span>Category: {asset.category || "—"}</span>
-                <span>Model: {asset.model || "—"}</span>
-              </div>
-            </Link>
-          ))}
-        </div>
-      )}
+      <AssetsList assets={assets} />
     </main>
   );
 }
