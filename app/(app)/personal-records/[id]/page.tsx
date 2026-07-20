@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { notFound } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase-server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -44,15 +45,24 @@ export default async function PersonalRecordPage({
         fallbackHref="/personal-records"
         label="Back to Personal Records"
       />
-      <div>
-        <h1 className="text-3xl font-bold">
-          {record.title}
-        </h1>
+        <div className="flex items-start justify-between gap-8">
+          <div className="flex-1">
+            <h1 className="text-3xl font-bold">
+              {record.title}
+            </h1>
 
-        <p className="text-muted-foreground capitalize">
-          {record.record_type.replaceAll("_", " ")}
-        </p>
-      </div>
+            <p className="text-muted-foreground capitalize">
+              {record.record_type.replaceAll("_", " ")}
+            </p>
+          </div>
+
+          <Link
+            href={`/personal-records/${record.id}/edit`}
+            className="rounded-lg border px-4 py-2 text-sm font-medium transition hover:bg-gray-100 shrink-0"
+          >
+            ✏️ Edit
+          </Link>
+        </div>
 
       <Card>
         <CardHeader>
