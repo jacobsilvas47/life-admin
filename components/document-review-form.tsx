@@ -3,6 +3,8 @@
 import { useState } from "react";
 import { ExtractedDocument } from "@/types/extracted-document";
 import SuggestedActions from "@/components/documents/suggested-actions";
+import AssetReviewFields from "@/components/documents/review-fields/asset-review-fields";
+import PersonalRecordReviewFields from "@/components/documents/review-fields/personal-record-review-fields";
 
 export default function DocumentReviewForm({
   documentId,
@@ -34,6 +36,9 @@ export default function DocumentReviewForm({
       suggestedActions: [],
     }
   );
+
+  const [isCreating, setIsCreating] = useState(false);
+  const [workflowComplete, setWorkflowComplete] = useState(false);
 
   function updateField(field: keyof ExtractedDocument, value: string) {
     setForm((prev) => ({
@@ -69,6 +74,12 @@ export default function DocumentReviewForm({
   }
 
   async function createAsset() {
+    if (isCreating || workflowComplete) {
+      return;
+    }
+
+    setIsCreating(true);
+
     const saved = await saveChanges();
 
     if (!saved) return;
@@ -113,11 +124,25 @@ export default function DocumentReviewForm({
   console.log(json);
 
   if (!json.success) {
+    setIsCreating(false);
     alert(json.error ?? "Workflow failed.");
     return;
   }
 
-  alert("Workflow completed!");
+  setWorkflowComplete(true);
+
+  if (json.context?.assetId) {
+    window.location.href = `/assets/${json.context.assetId}`;
+    return;
+  }
+
+  if (json.context?.personalRecordId) {
+    window.location.href =
+      `/personal-records/${json.context.personalRecordId}`;
+    return;
+  }
+
+  setIsCreating(false);
 }
 
 const isPersonalRecord =
@@ -192,15 +217,17 @@ const primaryButtonLabel = isPersonalRecord
         actions={form.suggestedActions ?? []}
       />
       
-      <Field label="Asset Name" value={form.assetName} onChange={(v) => updateField("assetName", v)} />
-      <Field label="Manufacturer" value={form.manufacturer} onChange={(v) => updateField("manufacturer", v)} />
-      <Field label="Model" value={form.model} onChange={(v) => updateField("model", v)} />
-      <Field label="Serial Number" value={form.serialNumber ?? ""} onChange={(v) => updateField("serialNumber", v)} />
-      <Field label="Purchase Date" value={form.purchaseDate} onChange={(v) => updateField("purchaseDate", v)} />
-      <Field label="Store" value={form.store} onChange={(v) => updateField("store", v)} />
-      <Field label="Price" value={form.price?.toString() ?? ""} onChange={(v) => updateField("price", v)} />
-      <Field label="Warranty Months" value={form.warrantyMonths?.toString() ?? ""} onChange={(v) => updateField("warrantyMonths", v)} />
-      <Field label="Category" value={form.category} onChange={(v) => updateField("category", v)} />
+      {isPersonalRecord ? (
+        <PersonalRecordReviewFields
+          form={form}
+          updateField={updateField}
+        />
+      ) : (
+        <AssetReviewFields
+          form={form}
+          updateField={updateField}
+        />
+      )}
 
       <div className="flex gap-3 pt-4">
         <button
@@ -218,9 +245,14 @@ const primaryButtonLabel = isPersonalRecord
 
         <button
           onClick={createAsset}
-          className="bg-black text-white px-6 py-3 rounded"
+          disabled={isCreating || workflowComplete}
+          className="cursor-pointer rounded bg-black px-6 py-3 text-white disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {primaryButtonLabel}
+          {isCreating
+            ? "Creating..."
+            : workflowComplete
+              ? "✓ Created"
+              : primaryButtonLabel}
         </button>
       </div>
     </div>

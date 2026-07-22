@@ -6,21 +6,25 @@ export async function POST(req: Request) {
   try {
     const { actions, context } = await req.json();
 
-    await applyAiRecommendations(
-      actions,
-      context as WorkflowContext
-    );
+  const workflowContext = await applyAiRecommendations(
+    actions,
+    context as WorkflowContext
+  );
 
-    return NextResponse.json({
-      success: true,
-    });
-  } catch (error: any) {
+  return NextResponse.json({
+    success: true,
+    context: workflowContext,
+  });
+  } catch (error: unknown) {
     console.error(error);
 
     return NextResponse.json(
       {
         success: false,
-        error: error.message,
+        error:
+        error instanceof Error
+          ? error.message
+          : "Workflow failed.",
       },
       {
         status: 500,
