@@ -23,7 +23,7 @@ const suggestionRules: Record<string, Record<string, string[]>> = {
     ],
   },
 
-  personal: {
+  personal_record: {
     passport: [
       "create_personal_record",
       "create_renewal_reminder",
@@ -67,18 +67,26 @@ const suggestionRules: Record<string, Record<string, string[]>> = {
 export function getSuggestedActions(
   documentCategory: string,
   documentType: string
-): string[] {
-  const category = documentCategory
+  ): string[] {
+    const category = documentCategory
+      .toLowerCase()
+      .trim()
+      .replaceAll(" ", "_");
+
+  const type = documentType
     .toLowerCase()
     .trim()
-    .replaceAll(" ", "_");
+    .replaceAll(" ", "_")
+    .replaceAll("-", "_")
+    .replaceAll("'", "");
 
-const type = documentType
-  .toLowerCase()
-  .trim()
-  .replaceAll(" ", "_")
-  .replaceAll("-", "_")
-  .replaceAll("'", "");
+    const normalizedCategory =
+    category === "personal"
+      ? "personal_record"
+      : category;
 
-  return suggestionRules[category]?.[type] ?? ["review_manually"];
+  return (
+    suggestionRules[normalizedCategory]?.[type] ??
+    ["review_manually"]
+  );
 }

@@ -146,7 +146,9 @@ export default function DocumentReviewForm({
 }
 
 const isPersonalRecord =
-  form.recordType && form.recordType.length > 0;
+  form.documentCategory === "personal_record" ||
+  form.documentCategory === "personal" ||
+  Boolean(form.recordType);
 
 const primaryButtonLabel = isPersonalRecord
   ? "Create Personal Record"
@@ -177,7 +179,7 @@ const primaryButtonLabel = isPersonalRecord
             </p>
           )}
 
-          {form.documentCategory === "personal_record" && (
+          {isPersonalRecord && (
             <div className="mt-4 space-y-2 border-t pt-4">
               <p>
                 <span className="font-medium">Record Title:</span>{" "}
@@ -256,26 +258,5 @@ const primaryButtonLabel = isPersonalRecord
         </button>
       </div>
     </div>
-  );
-}
-
-function Field({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <label className="block">
-      <span className="text-sm font-medium">{label}</span>
-      <input
-        className="mt-1 w-full border rounded p-2"
-        value={value}
-        onChange={(e) => onChange(e.target.value)}
-      />
-    </label>
   );
 }
