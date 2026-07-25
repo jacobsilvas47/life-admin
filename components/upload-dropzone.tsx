@@ -3,9 +3,17 @@
 import { useCallback, useState } from "react";
 import { useDropzone } from "react-dropzone";
 import { toast } from "sonner";
+import {
+  CheckCircle2,
+  Clock3,
+  Loader2,
+  XCircle,
+} from "lucide-react";
 
 import { uploadDocument } from "@/lib/storage";
 import { createDocumentRecord } from "@/lib/documents";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 type UploadStatus =
   | "queued"
@@ -29,12 +37,21 @@ export default function UploadDropzone() {
     (upload) => upload.status === "success"
   ).length;
 
+  const failedUploads = uploads.filter(
+    (upload) => upload.status === "error"
+  ).length;
+
   const progress =
     uploads.length === 0
       ? 0
       : Math.round(
           (completedUploads / uploads.length) * 100
         );
+
+  const uploadFinished =
+    uploads.length > 0 &&
+    !uploading &&
+    completedUploads + failedUploads === uploads.length;
 
   function updateUpload(
     id: string,
@@ -67,44 +84,55 @@ export default function UploadDropzone() {
       setUploading(true);
 
       try {
-        await Promise.all(
-          queuedUploads.map(async (item) => {
+        const results = await Promise.all(
+        queuedUploads.map(async (item) => {
+          updateUpload(item.id, {
+            status: "uploading",
+          });
+
+          try {
+            const path = await uploadDocument(item.file);
+
+            await createDocumentRecord(
+              item.file,
+              path
+            );
+
             updateUpload(item.id, {
-              status: "uploading",
+              status: "success",
             });
 
-            try {
-              const path = await uploadDocument(
-                item.file
-              );
+            return true;
+          } catch (error: unknown) {
+            const message =
+              error instanceof Error
+                ? error.message
+                : "Upload failed.";
 
-              await createDocumentRecord(
-                item.file,
-                path
-              );
+            updateUpload(item.id, {
+              status: "error",
+              error: message,
+            });
 
-              updateUpload(item.id, {
-                status: "success",
-              });
-            } catch (error: unknown) {
-              const message =
-                error instanceof Error
-                  ? error.message
-                  : "Upload failed.";
+            return false;
+          }
+        })
+      );
 
-              updateUpload(item.id, {
-                status: "error",
-                error: message,
-              });
-            }
-          })
+      const successfulCount = results.filter(Boolean).length;
+      const failedCount = results.length - successfulCount;
+
+      if (failedCount > 0) {
+        toast.warning(
+          `${successfulCount} uploaded and ${failedCount} failed.`
         );
-
+      } else {
         toast.success(
-          `${acceptedFiles.length} document${
-            acceptedFiles.length === 1 ? "" : "s"
-          } finished uploading.`
+          `${successfulCount} document${
+            successfulCount === 1 ? "" : "s"
+          } uploaded successfully.`
         );
+      }
       } finally {
         setUploading(false);
       }
@@ -149,30 +177,74 @@ export default function UploadDropzone() {
 
       {uploads.length > 0 && (
   <>
-    <div className="rounded-xl border bg-white p-4 shadow-sm">
-      <div className="mb-2 flex items-center justify-between">
-        <h3 className="font-semibold">
-          Overall Progress
-        </h3>
+    <div className="rounded-xl border bg-white p-5 shadow-sm">
+    {uploadFinished ? (
+      <div className="space-y-4">
+        <div>
+          <h3 className="text-lg font-semibold">
+            {failedUploads > 0
+              ? "Upload Finished"
+              : "Upload Complete"}
+          </h3>
 
-        <span className="text-sm font-medium">
-          {progress}%
-        </span>
+          <p className="mt-1 text-sm text-muted-foreground">
+            {completedUploads} document
+            {completedUploads === 1 ? "" : "s"} uploaded successfully.
+            {failedUploads > 0
+              ? ` ${failedUploads} failed.`
+              : ""}
+          </p>
+        </div>
+
+        <div className="flex flex-wrap gap-3">
+          <Button asChild>
+            <Link href="/documents">
+              View Uploaded Documents
+            </Link>
+          </Button>
+
+          <Button
+            type="button"
+            variant="outline"
+            onClick={() => setUploads([])}
+          >
+            Upload More
+          </Button>
+        </div>
       </div>
+    ) : (
+      <>
+        <div className="mb-2 flex items-center justify-between">
+          <h3 className="font-semibold">
+            Overall Progress
+          </h3>
 
-      <div className="h-3 overflow-hidden rounded-full bg-muted">
-        <div
-          className="h-full bg-primary transition-all duration-300"
-          style={{
-            width: `${progress}%`,
-          }}
-        />
-      </div>
+          <span className="text-sm font-medium">
+            {progress}%
+          </span>
+        </div>
 
-      <p className="mt-2 text-sm text-muted-foreground">
-        {completedUploads} of {uploads.length} uploaded
-      </p>
-    </div>
+        <div className="h-2.5 overflow-hidden rounded-full bg-muted">
+          <div
+            className="h-full rounded-full bg-primary/70 transition-all duration-300"
+            style={{
+              width: `${progress}%`,
+            }}
+          />
+        </div>
+
+        <p className="mt-2 text-sm text-muted-foreground">
+          {completedUploads} of {uploads.length} uploaded
+        </p>
+
+        {failedUploads > 0 && (
+          <p className="mt-1 text-sm text-red-600">
+            {failedUploads} failed
+          </p>
+        )}
+      </>
+    )}
+  </div>
 
     <div className="rounded-xl border bg-white p-4 shadow-sm">
 
@@ -228,19 +300,47 @@ function UploadStatusLabel({
 }: {
   status: UploadStatus;
 }) {
-  const labels: Record<
+  const statusConfig: Record<
     UploadStatus,
-    string
+    {
+      label: string;
+      className: string;
+      icon: React.ReactNode;
+    }
   > = {
-    queued: "Queued",
-    uploading: "Uploading...",
-    success: "Uploaded",
-    error: "Failed",
+    queued: {
+      label: "Queued",
+      className: "bg-muted text-muted-foreground",
+      icon: <Clock3 className="size-4" />,
+    },
+
+    uploading: {
+      label: "Uploading",
+      className: "bg-blue-50 text-blue-700",
+      icon: <Loader2 className="size-4 animate-spin" />,
+    },
+
+    success: {
+      label: "Uploaded",
+      className: "bg-green-50 text-green-700",
+      icon: <CheckCircle2 className="size-4" />,
+    },
+
+    error: {
+      label: "Failed",
+      className: "bg-red-50 text-red-700",
+      icon: <XCircle className="size-4" />,
+    },
   };
 
+  const config = statusConfig[status];
+
   return (
-    <span className="shrink-0 text-sm text-muted-foreground">
-      {labels[status]}
+    <span
+      className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${config.className}`}
+    >
+      {config.icon}
+      {config.label}
     </span>
   );
 }
