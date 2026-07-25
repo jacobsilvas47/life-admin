@@ -2,6 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Button } from "@/components/ui/button";
 
 export default function ProcessDocumentButton({
   documentId,
@@ -33,12 +34,12 @@ export default function ProcessDocumentButton({
   }
 
   return (
-    <button
+    <Button
       onClick={processDocument}
       disabled={loading}
-      className="bg-black text-white px-4 py-2 rounded disabled:opacity-50"
+      size="sm"
     >
       {loading ? "Processing..." : "Process"}
-    </button>
+    </Button>
   );
 }

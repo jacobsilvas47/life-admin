@@ -5,6 +5,7 @@ import { ExtractedDocument } from "@/types/extracted-document";
 import SuggestedActions from "@/components/documents/suggested-actions";
 import AssetReviewFields from "@/components/documents/review-fields/asset-review-fields";
 import PersonalRecordReviewFields from "@/components/documents/review-fields/personal-record-review-fields";
+import { toast } from "sonner";
 
 export default function DocumentReviewForm({
   documentId,
@@ -66,7 +67,7 @@ export default function DocumentReviewForm({
     const json = await res.json();
 
     if (!json.success) {
-      alert(json.error ?? "Failed to save changes.");
+      toast.error(json.error ?? "Failed to save changes.");
       return false;
     }
 
@@ -82,7 +83,10 @@ export default function DocumentReviewForm({
 
     const saved = await saveChanges();
 
-    if (!saved) return;
+    if (!saved) {
+      setIsCreating(false);
+      return;
+    }
 
     console.log("Suggested Actions:", form.suggestedActions);
     console.log("Context:", {
@@ -125,18 +129,22 @@ export default function DocumentReviewForm({
 
   if (!json.success) {
     setIsCreating(false);
-    alert(json.error ?? "Workflow failed.");
+    toast.error(json.error ?? "Workflow failed.");
     return;
   }
 
   setWorkflowComplete(true);
 
   if (json.context?.assetId) {
+    toast.success("Asset created successfully.");
+
     window.location.href = `/assets/${json.context.assetId}`;
     return;
   }
 
   if (json.context?.personalRecordId) {
+    toast.success("Personal record created successfully.");
+    
     window.location.href =
       `/personal-records/${json.context.personalRecordId}`;
     return;
@@ -237,7 +245,7 @@ const primaryButtonLabel = isPersonalRecord
             const success = await saveChanges();
 
             if (success) {
-              alert("Saved!");
+              toast.success("Changes saved successfully.");
             }
           }}
           className="border rounded px-6 py-3 hover:bg-gray-100"

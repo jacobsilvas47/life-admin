@@ -3,6 +3,7 @@ import { Badge } from "@/components/ui/badge";
 import { supabaseServer } from "@/lib/supabase-server";
 import { getRelativeDate } from "@/lib/date/get-relative-date";
 import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default async function DashboardPage() {
   const [
@@ -67,12 +68,41 @@ export default async function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-6xl">
-      <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+      <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
         <div>
-          <p className="text-sm text-muted-foreground">Good morning, Jacob</p>
+          <p className="text-sm text-muted-foreground">
+            Good morning, Jacob
+          </p>
+
           <h1 className="text-3xl font-bold tracking-tight">
-            Here&apos;s what needs your attention.
+            Here's what needs your attention.
           </h1>
+        </div>
+
+        <div className="flex flex-wrap gap-2">
+          <Button asChild>
+            <Link href="/upload">
+              Upload Documents
+            </Link>
+          </Button>
+
+          <Button
+            asChild
+            variant="outline"
+          >
+            <Link href="/assets">
+              Assets
+            </Link>
+          </Button>
+
+          <Button
+            asChild
+            variant="outline"
+          >
+            <Link href="/personal-records">
+              Personal Records
+            </Link>
+          </Button>
         </div>
       </div>
 
@@ -169,7 +199,7 @@ export default async function DashboardPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Recently Added</CardTitle>
+            <CardTitle>Recent Activity</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             {activities && activities.length > 0 ? (
@@ -182,8 +212,8 @@ export default async function DashboardPage() {
                     {activity.title}
                   </p>
 
-                  <p className="text-xs text-muted-foreground capitalize">
-                    {activity.activity_type.replaceAll("_", " ")}
+                  <p className="text-xs text-muted-foreground">
+                    {getRelativeDate(activity.created_at).text}
                   </p>
                 </div>
               ))

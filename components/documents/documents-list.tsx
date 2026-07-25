@@ -5,6 +5,8 @@ import Link from "next/link";
 
 import SearchBar from "@/components/ui/search-bar";
 import ProcessDocumentButton from "@/components/process-document-button";
+import DeleteDocumentButton from "@/components/documents/delete-document-button";
+import { Button } from "@/components/ui/button";
 
 type Document = {
   id: string;
@@ -57,22 +59,33 @@ export default function DocumentsList({
             </div>
 
             <div className="flex items-center gap-4">
-              <Link
-                href={`/documents/${doc.id}`}
-                className="text-sm font-medium text-primary hover:underline"
+              <Button
+                asChild
+                variant="ghost"
+                size="sm"
               >
-                View
-              </Link>
+                <Link href={`/documents/${doc.id}`}>
+                  View
+                </Link>
+              </Button>
 
-              <Link
-                href={`/documents/${doc.id}/review`}
-                className="text-sm font-medium text-primary hover:underline"
+              <Button
+                asChild
+                variant="outline"
+                size="sm"
               >
-                Review
-              </Link>
+                <Link href={`/documents/${doc.id}/review`}>
+                  Review
+                </Link>
+              </Button>
 
               <ProcessDocumentButton
                 documentId={doc.id}
+              />
+
+              <DeleteDocumentButton
+                documentId={doc.id}
+                fileName={doc.file_name}
               />
             </div>
           </div>

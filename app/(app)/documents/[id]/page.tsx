@@ -4,6 +4,7 @@ import { supabaseServer } from "@/lib/supabase-server";
 import DocumentPreview from "@/components/documents/document-preview";
 import SectionCard from "@/components/ui/section-card";
 import BackButton from "@/components/ui/back-button";
+import { Button } from "@/components/ui/button";
 
 export default async function DocumentDetailsPage({
   params,
@@ -12,11 +13,14 @@ export default async function DocumentDetailsPage({
 }) {
   const { id } = await params;
 
-  const { data: document, error } = await supabaseServer
-    .from("documents")
-    .select("*")
-    .eq("id", id)
-    .single();
+const { data: document, error } = await supabaseServer
+  .from("documents")
+  .select(`
+    *,
+    extracted_data
+  `)
+  .eq("id", id)
+  .single();
 
   if (error || !document) {
     notFound();
@@ -45,12 +49,11 @@ export default async function DocumentDetailsPage({
           </p>
         </div>
 
-        <Link
-          href={`/documents/${document.id}/review`}
-          className="text-sm font-medium text-primary hover:underline"
-        >
-          Review extracted information
-        </Link>
+        <Button asChild variant="outline">
+          <Link href={`/documents/${document.id}/review`}>
+            Review
+          </Link>
+        </Button>
       </div>
 
       <SectionCard
@@ -67,10 +70,19 @@ export default async function DocumentDetailsPage({
           value={document.file_type}
         />
 
-        <InfoRow
-          label="Status"
-          value={document.status}
-        />
+        <div className="flex items-center justify-between border-b py-3">
+          <span className="text-sm font-medium text-muted-foreground">
+            Status
+          </span>
+
+          <span
+            className={`rounded-full px-3 py-1 text-sm font-medium ${getStatusClasses(
+              document.status
+            )}`}
+          >
+            {formatLabel(document.status)}
+          </span>
+        </div>
 
         <InfoRow
           label="Uploaded"
@@ -78,6 +90,49 @@ export default async function DocumentDetailsPage({
             document.uploaded_at
               ? new Date(document.uploaded_at).toLocaleDateString()
               : null
+          }
+        />
+      </SectionCard>
+
+      <SectionCard
+        title="AI Analysis"
+        description="Information extracted from this document."
+      >
+        <InfoRow
+          label="Document Type"
+          value={
+            document.extracted_data?.documentType
+              ? formatLabel(document.extracted_data.documentType)
+              : "—"
+          }
+        />
+
+        <InfoRow
+          label="Category"
+          value={
+            document.extracted_data?.documentCategory
+              ? formatLabel(document.extracted_data.documentCategory)
+              : "—"
+          }
+        />
+
+        <InfoRow
+          label="Confidence"
+          value={
+            document.extracted_data?.confidence != null
+              ? `${Math.round(document.extracted_data.confidence * 100)}%`
+              : "—"
+          }
+        />
+
+        <InfoRow
+          label="Suggested Actions"
+          value={
+            document.extracted_data?.suggestedActions?.length
+              ? document.extracted_data.suggestedActions
+                  .map((action: string) => formatLabel(action))
+                  .join(", ")
+              : "None"
           }
         />
       </SectionCard>
@@ -121,3 +176,26 @@ function InfoRow({
     </div>
   );
 }
+
+function getStatusClasses(status: string) {
+  switch (status) {
+    case "processed":
+      return "bg-green-100 text-green-700";
+
+    case "processing":
+      return "bg-yellow-100 text-yellow-700";
+
+    case "failed":
+      return "bg-red-100 text-red-700";
+
+    default:
+      return "bg-gray-100 text-gray-700";
+  }
+}
+
+function formatLabel(value: string) {
+  return value
+    .replaceAll("_", " ")
+    .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
