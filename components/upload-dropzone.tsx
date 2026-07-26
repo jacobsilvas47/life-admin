@@ -92,11 +92,31 @@ export default function UploadDropzone() {
 
           try {
             const path = await uploadDocument(item.file);
+            
+            const document =
+              await createDocumentRecord(
+                item.file,
+                path
+              );
 
-            await createDocumentRecord(
-              item.file,
-              path
+            const processResponse = await fetch(
+              "/api/process-document",
+              {
+                method: "POST",
+                headers: {
+                  "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                  documentId: document.id,
+                }),
+              }
             );
+
+            if (!processResponse.ok) {
+              throw new Error(
+                "Document uploaded but AI processing failed."
+              );
+            }
 
             updateUpload(item.id, {
               status: "success",

@@ -45,12 +45,7 @@ export async function POST(req: Request) {
       throw new Error(signedUrlError?.message ?? "Could not create signed URL.");
     }
 
-    const userContent: any[] = [
-      {
-        type: "input_text",
-        text: "Analyze this uploaded document and extract the most useful structured information.",
-      },
-    ];
+    const userContent: OpenAI.Responses.ResponseInputContent[] = [];
 
     const isHeic =
       document.file_type === "image/heic" ||
@@ -146,15 +141,22 @@ export async function POST(req: Request) {
       success: true,
       result: extracted,
     });
-  } catch (error: any) {
-    console.error("Process document error:", error);
+  } catch (error: unknown) {
+  console.error("Process document error:", error);
 
-    return NextResponse.json(
-      {
-        success: false,
-        error: error?.message ?? "Failed to process document.",
-      },
-      { status: 500 }
-    );
-  }
+  const message =
+    error instanceof Error
+      ? error.message
+      : "Failed to process document.";
+
+  return NextResponse.json(
+    {
+      success: false,
+      error: message,
+    },
+    {
+      status: 500,
+    }
+  );
+}
 }
