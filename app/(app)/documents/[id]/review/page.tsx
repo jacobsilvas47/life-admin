@@ -1,13 +1,42 @@
 import { supabaseServer } from "@/lib/supabase-server";
 import DocumentReviewForm from "@/components/document-review-form";
 import BackButton from "@/components/ui/back-button";
+import DeleteDocumentButton from "@/components/documents/delete-document-button";
 
 export default async function DocumentReviewPage({
-  params,
-}: {
-  params: Promise<{ id: string }>;
-}) {
+    params,
+    searchParams,
+  }: {
+    params: Promise<{ id: string }>;
+    searchParams: Promise<{
+      queueIds?: string;
+      queueIndex?: string;
+    }>;
+  }) {
+  
   const { id } = await params;
+  const query = await searchParams;
+
+  const queueIds = query.queueIds ?? null;
+  const queueIndex = Number(query.queueIndex ?? "0");
+
+  const queueIdList = queueIds
+    ? decodeURIComponent(queueIds)
+        .split(",")
+        .filter(Boolean)
+    : [];
+
+  const nextQueueIndex = queueIndex + 1;
+
+  const nextQueueHref =
+    queueIdList.length > 0 &&
+    nextQueueIndex < queueIdList.length
+      ? `/documents/review-queue?ids=${encodeURIComponent(
+          queueIdList.join(",")
+        )}&index=${nextQueueIndex}`
+      : queueIdList.length > 0
+        ? "/documents"
+        : null;
 
   const { data: document, error } = await supabaseServer
     .from("documents")
@@ -39,14 +68,21 @@ export default async function DocumentReviewPage({
         fallbackHref="/documents"
         label="Back to Documents"
         />
-      <div>
-        <h1 className="text-3xl font-bold">
-          Review Document
-        </h1>
+      <div className="flex items-start justify-between gap-8">
+        <div className="min-w-0 flex-1">
+          <h1 className="text-3xl font-bold">
+            Review Document
+          </h1>
 
-        <p className="mt-2 text-muted-foreground">
-          {document.file_name}
-        </p>
+          <p className="mt-2 truncate text-gray-500">
+            {document.file_name}
+          </p>
+        </div>
+
+        <DeleteDocumentButton
+          documentId={document.id}
+          fileName={document.file_name}
+        />
       </div>
 
       <div className="grid grid-cols-1 gap-8 lg:grid-cols-2">
@@ -74,6 +110,7 @@ export default async function DocumentReviewPage({
           <DocumentReviewForm
             documentId={document.id}
             extractedData={document.extracted_data}
+            successRedirectHref={nextQueueHref}
           />
         </section>
       </div>

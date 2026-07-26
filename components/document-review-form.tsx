@@ -10,9 +10,13 @@ import { toast } from "sonner";
 export default function DocumentReviewForm({
   documentId,
   extractedData,
+  successRedirectHref = null,
+  queueMode = false,
 }: {
   documentId: string;
   extractedData: ExtractedDocument | null;
+  successRedirectHref?: string | null;
+  queueMode?: boolean;
 }) {
   const [form, setForm] = useState<ExtractedDocument>(
     extractedData ?? {
@@ -135,6 +139,13 @@ export default function DocumentReviewForm({
 
   setWorkflowComplete(true);
 
+  if (successRedirectHref) {
+  toast.success("Document completed.");
+
+  window.location.href = successRedirectHref;
+  return;
+}
+
   if (json.context?.assetId) {
     toast.success("Asset created successfully.");
 
@@ -158,9 +169,11 @@ const isPersonalRecord =
   form.documentCategory === "personal" ||
   Boolean(form.recordType);
 
-const primaryButtonLabel = isPersonalRecord
-  ? "Create Personal Record"
-  : "Create Asset";
+const primaryButtonLabel = queueMode
+  ? "Create & Next →"
+  : isPersonalRecord
+    ? "Create Personal Record"
+    : "Create Asset";
 
   return (
     <div className="space-y-4">

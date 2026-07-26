@@ -18,6 +18,7 @@ import { Button } from "@/components/ui/button";
 type UploadStatus =
   | "queued"
   | "uploading"
+  | "processing"
   | "success"
   | "error";
 
@@ -26,6 +27,7 @@ type UploadItem = {
   file: File;
   name: string;
   status: UploadStatus;
+  documentId?: string;
   error?: string;
 };
 
@@ -33,7 +35,7 @@ export default function UploadDropzone() {
   const [uploads, setUploads] = useState<UploadItem[]>([]);
   const [uploading, setUploading] = useState(false);
 
-  const completedUploads = uploads.filter(
+  const readyDocuments = uploads.filter(
     (upload) => upload.status === "success"
   ).length;
 
@@ -45,13 +47,28 @@ export default function UploadDropzone() {
     uploads.length === 0
       ? 0
       : Math.round(
-          (completedUploads / uploads.length) * 100
+          (readyDocuments / uploads.length) * 100
         );
 
-  const uploadFinished =
+  const importFinished =
     uploads.length > 0 &&
     !uploading &&
-    completedUploads + failedUploads === uploads.length;
+    readyDocuments + failedUploads === uploads.length;
+
+    const reviewDocumentIds = uploads
+      .filter(
+        (upload) =>
+          upload.status === "success" &&
+          upload.documentId
+      )
+      .map((upload) => upload.documentId)
+      .join(",");
+
+      const reviewQueueHref = reviewDocumentIds
+  ? `/documents/review-queue?ids=${encodeURIComponent(
+      reviewDocumentIds
+    )}`
+  : "/documents";
 
   function updateUpload(
     id: string,
@@ -92,12 +109,17 @@ export default function UploadDropzone() {
 
           try {
             const path = await uploadDocument(item.file);
-            
-            const document =
+
+            const createdDocument =
               await createDocumentRecord(
                 item.file,
                 path
               );
+
+            updateUpload(item.id, {
+              status: "processing",
+              documentId: createdDocument.id,
+            });
 
             const processResponse = await fetch(
               "/api/process-document",
@@ -107,14 +129,17 @@ export default function UploadDropzone() {
                   "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                  documentId: document.id,
-                }),
+                documentId: createdDocument.id,
+              }),
               }
             );
 
-            if (!processResponse.ok) {
+            const processResult = await processResponse.json();
+
+            if (!processResponse.ok || !processResult.success) {
               throw new Error(
-                "Document uploaded but AI processing failed."
+                processResult.error ??
+                  "Document uploaded, but AI analysis failed."
               );
             }
 
@@ -161,10 +186,11 @@ export default function UploadDropzone() {
   );
 
   const {
-    getRootProps,
-    getInputProps,
-    isDragActive,
-  } = useDropzone({
+  getRootProps,
+  getInputProps,
+  isDragActive,
+  open,
+} = useDropzone({
     onDrop,
     multiple: true,
     disabled: uploading,
@@ -198,35 +224,38 @@ export default function UploadDropzone() {
       {uploads.length > 0 && (
   <>
     <div className="rounded-xl border bg-white p-5 shadow-sm">
-    {uploadFinished ? (
+    {importFinished ? (
       <div className="space-y-4">
         <div>
           <h3 className="text-lg font-semibold">
             {failedUploads > 0
-              ? "Upload Finished"
-              : "Upload Complete"}
+              ? "Import Finished"
+              : "Your Documents Are Ready"}
           </h3>
 
           <p className="mt-1 text-sm text-muted-foreground">
-            {completedUploads} document
-            {completedUploads === 1 ? "" : "s"} uploaded successfully.
+            {readyDocuments} document
+            {readyDocuments === 1 ? "" : "s"} analyzed and ready for review.
             {failedUploads > 0
-              ? ` ${failedUploads} failed.`
+              ? ` ${failedUploads} need attention.`
               : ""}
           </p>
         </div>
 
         <div className="flex flex-wrap gap-3">
           <Button asChild>
-            <Link href="/documents">
-              View Uploaded Documents
+            <Link href={reviewQueueHref}>
+              Review Documents
             </Link>
           </Button>
 
           <Button
             type="button"
             variant="outline"
-            onClick={() => setUploads([])}
+            onClick={() => {
+              setUploads([]);
+              open();
+            }}
           >
             Upload More
           </Button>
@@ -236,7 +265,7 @@ export default function UploadDropzone() {
       <>
         <div className="mb-2 flex items-center justify-between">
           <h3 className="font-semibold">
-            Overall Progress
+            Importing Documents
           </h3>
 
           <span className="text-sm font-medium">
@@ -254,7 +283,7 @@ export default function UploadDropzone() {
         </div>
 
         <p className="mt-2 text-sm text-muted-foreground">
-          {completedUploads} of {uploads.length} uploaded
+          {readyDocuments} of {uploads.length} ready for review
         </p>
 
         {failedUploads > 0 && (
@@ -274,13 +303,7 @@ export default function UploadDropzone() {
             </h3>
 
             <span className="text-sm text-muted-foreground">
-              {
-                uploads.filter(
-                  (item) =>
-                    item.status === "success"
-                ).length
-              }{" "}
-              of {uploads.length} complete
+              {readyDocuments} of {uploads.length} ready
             </span>
           </div>
 
@@ -321,37 +344,43 @@ function UploadStatusLabel({
   status: UploadStatus;
 }) {
   const statusConfig: Record<
-    UploadStatus,
-    {
-      label: string;
-      className: string;
-      icon: React.ReactNode;
-    }
-  > = {
-    queued: {
-      label: "Queued",
-      className: "bg-muted text-muted-foreground",
-      icon: <Clock3 className="size-4" />,
-    },
+  UploadStatus,
+  {
+    label: string;
+    className: string;
+    icon: React.ReactNode;
+  }
+> = {
+  queued: {
+    label: "Waiting",
+    className: "bg-muted text-muted-foreground",
+    icon: <Clock3 className="size-4" />,
+  },
 
-    uploading: {
-      label: "Uploading",
-      className: "bg-blue-50 text-blue-700",
-      icon: <Loader2 className="size-4 animate-spin" />,
-    },
+  uploading: {
+    label: "Uploading",
+    className: "bg-blue-50 text-blue-700",
+    icon: <Loader2 className="size-4 animate-spin" />,
+  },
 
-    success: {
-      label: "Uploaded",
-      className: "bg-green-50 text-green-700",
-      icon: <CheckCircle2 className="size-4" />,
-    },
+  processing: {
+    label: "Analyzing",
+    className: "bg-violet-50 text-violet-700",
+    icon: <Loader2 className="size-4 animate-spin" />,
+  },
 
-    error: {
-      label: "Failed",
-      className: "bg-red-50 text-red-700",
-      icon: <XCircle className="size-4" />,
-    },
-  };
+  success: {
+    label: "Ready for Review",
+    className: "bg-green-50 text-green-700",
+    icon: <CheckCircle2 className="size-4" />,
+  },
+
+  error: {
+    label: "Needs Attention",
+    className: "bg-red-50 text-red-700",
+    icon: <XCircle className="size-4" />,
+  },
+};
 
   const config = statusConfig[status];
 
