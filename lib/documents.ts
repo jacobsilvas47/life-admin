@@ -2,7 +2,8 @@ import { createClient } from "./supabase";
 
 export async function createDocumentRecord(
   file: File,
-  storagePath: string
+  storagePath: string,
+  importSessionId: string
 ) {
   const supabase = createClient();
 
@@ -14,6 +15,7 @@ export async function createDocumentRecord(
       file_type: file.type,
       file_size: file.size,
       status: "pending",
+      import_session_id: importSessionId,
     })
     .select()
     .single();

@@ -12,7 +12,7 @@ export default function SearchBar({
   placeholder = "Search...",
 }: SearchBarProps) {
   return (
-    <div className="relative mb-6">
+    <div className="relative">
       <span
         aria-hidden="true"
         className="pointer-events-none absolute left-4 top-1/2 -translate-y-1/2 text-muted-foreground"

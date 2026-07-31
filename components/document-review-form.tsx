@@ -7,6 +7,7 @@ import AssetReviewFields from "@/components/documents/review-fields/asset-review
 import PersonalRecordReviewFields from "@/components/documents/review-fields/personal-record-review-fields";
 import { toast } from "sonner";
 
+
 export default function DocumentReviewForm({
   documentId,
   extractedData,
@@ -44,6 +45,18 @@ export default function DocumentReviewForm({
 
   const [isCreating, setIsCreating] = useState(false);
   const [workflowComplete, setWorkflowComplete] = useState(false);
+
+  const [selectedActions, setSelectedActions] = useState(
+    form.suggestedActions ?? []
+  );
+
+  function toggleAction(action: string) {
+    setSelectedActions((current) =>
+      current.includes(action)
+        ? current.filter((a) => a !== action)
+        : [...current, action]
+    );
+  }
 
   function updateField(field: keyof ExtractedDocument, value: string) {
     setForm((prev) => ({
@@ -105,7 +118,9 @@ export default function DocumentReviewForm({
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      actions: form.suggestedActions,
+      actions: selectedActions.filter(
+        (action) => action !== "review_manually"
+      ),  
       context: {
         documentId,
 
@@ -133,7 +148,12 @@ export default function DocumentReviewForm({
 
   if (!json.success) {
     setIsCreating(false);
-    toast.error(json.error ?? "Workflow failed.");
+    toast.error(
+      json.error ??
+      "Workflow failed."
+    );
+
+    console.log(json);
     return;
   }
 
@@ -238,6 +258,8 @@ const primaryButtonLabel = queueMode
 
       <SuggestedActions
         actions={form.suggestedActions ?? []}
+        selectedActions={selectedActions}
+        onToggle={toggleAction}
       />
       
       {isPersonalRecord ? (

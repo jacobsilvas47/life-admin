@@ -113,6 +113,10 @@ export async function POST(req: Request) {
         extracted.recordType || extracted.documentType || ""
       );
 
+      console.log("Document Type:", extracted.documentType);
+      console.log("Document Category:", extracted.documentCategory);
+      console.log("Suggested Actions:", extracted.suggestedActions);
+
       console.log("AI Extraction:", extracted);
 
     const { error: updateError } = await supabaseServer

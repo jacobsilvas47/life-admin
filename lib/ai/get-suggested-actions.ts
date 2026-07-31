@@ -3,13 +3,13 @@ const suggestionRules: Record<string, Record<string, string[]>> = {
     receipt: [
       "create_asset",
       "attach_receipt",
-      "add_warranty",
+      "attach_warranty",
     ],
 
     invoice: [
       "create_asset",
       "attach_receipt",
-      "add_warranty",
+      "attach_warranty",
     ],
 
     owner_manual: ["attach_manual"],
@@ -83,10 +83,14 @@ export function getSuggestedActions(
     const normalizedCategory =
     category === "personal"
       ? "personal_record"
-      : category;
+      : category === "financial" &&
+          ["receipt", "invoice"].includes(type)
+        ? "asset"
+        : category;
 
-  return (
-    suggestionRules[normalizedCategory]?.[type] ??
-    ["review_manually"]
-  );
+  const actions =
+  suggestionRules[normalizedCategory]?.[type] ??
+    ["review_manually"];
+
+  return actions.filter(Boolean);
 }

@@ -37,9 +37,9 @@ export async function createWarranty({
       provider,
       warranty_type: warrantyType,
 
-      purchase_date: purchaseDate,
-      start_date: startDate,
-      expiration_date: expirationDate,
+      purchase_date: purchaseDate || null,
+      start_date: startDate || null,
+      expiration_date: expirationDate || null,
 
       duration_months: durationMonths,
 

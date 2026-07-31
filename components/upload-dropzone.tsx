@@ -89,6 +89,30 @@ export default function UploadDropzone() {
         return;
       }
 
+      const response = await fetch(
+        "/api/import-session",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            totalDocuments: acceptedFiles.length,
+          }),
+        }
+      );
+
+      const result = await response.json();
+
+      if (!response.ok || !result.success) {
+        throw new Error(
+          result.error ??
+            "Failed to create import session."
+        );
+      }
+
+      const importSession = result.session;
+
       const queuedUploads: UploadItem[] =
         acceptedFiles.map((file) => ({
           id: crypto.randomUUID(),
@@ -112,9 +136,10 @@ export default function UploadDropzone() {
 
             const createdDocument =
               await createDocumentRecord(
-                item.file,
-                path
-              );
+              item.file,
+              path,
+              importSession.id
+            );
 
             updateUpload(item.id, {
               status: "processing",

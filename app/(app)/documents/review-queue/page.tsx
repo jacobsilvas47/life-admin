@@ -187,10 +187,9 @@ export default async function ReviewQueuePage({
           </h2>
 
           <DocumentReviewForm
+            key={document.id}
             documentId={document.id}
             extractedData={document.extracted_data}
-            successRedirectHref={nextHref}
-            queueMode
           />
         </section>
       </div>

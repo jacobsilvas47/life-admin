@@ -3,8 +3,8 @@ import { notFound } from "next/navigation";
 import { supabaseServer } from "@/lib/supabase-server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import DocumentPreview from "@/components/documents/document-preview";
-import DocumentViewer from "@/components/documents/document-viewer";
 import BackButton from "@/components/ui/back-button";
+import DeletePersonalRecordButton from "@/components/personal-records/delete-personal-record-button";
 
 export default async function PersonalRecordPage({
   params,
@@ -56,12 +56,19 @@ export default async function PersonalRecordPage({
             </p>
           </div>
 
-          <Link
-            href={`/personal-records/${record.id}/edit`}
-            className="rounded-lg border px-4 py-2 text-sm font-medium transition hover:bg-gray-100 shrink-0"
-          >
-            ✏️ Edit
-          </Link>
+          <div className="flex shrink-0 items-center gap-2">
+            <Link
+              href={`/personal-records/${record.id}/edit`}
+              className="rounded-lg border px-4 py-2 text-sm font-medium transition hover:bg-gray-100"
+            >
+              ✏️ Edit
+            </Link>
+
+            <DeletePersonalRecordButton
+              recordId={record.id}
+              recordTitle={record.title}
+            />
+          </div>
         </div>
 
       <Card>
