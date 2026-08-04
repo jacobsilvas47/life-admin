@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import DocumentPreview from "@/components/documents/document-preview";
 import BackButton from "@/components/ui/back-button";
 import DeletePersonalRecordButton from "@/components/personal-records/delete-personal-record-button";
+import { formatDate } from "@/lib/date/format-date";
 
 export default async function PersonalRecordPage({
   params,
@@ -85,12 +86,12 @@ export default async function PersonalRecordPage({
 
           <InfoRow
             label="Issue Date"
-            value={record.issue_date}
+            value={formatDate(record.issue_date)}
           />
 
           <InfoRow
             label="Expiration Date"
-            value={record.expiration_date}
+            value={formatDate(record.expiration_date)}
           />
 
           <InfoRow

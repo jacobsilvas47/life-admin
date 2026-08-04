@@ -4,12 +4,22 @@ import { supabaseServer } from "@/lib/supabase-server";
 import { getRelativeDate } from "@/lib/date/get-relative-date";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import { formatDate } from "@/lib/date/format-date";
 
 export default async function DashboardPage() {
+  const now = new Date();
+
+  const thirtyDaysFromNow = new Date();
+  thirtyDaysFromNow.setDate(
+    thirtyDaysFromNow.getDate() + 30
+  );
+
   const [
     documentsResult,
     assetsResult,
+    personalRecordsResult,
     remindersResult,
+    expiringSoonResult,
   ] = await Promise.all([
     supabaseServer
       .from("documents")
@@ -20,8 +30,21 @@ export default async function DashboardPage() {
       .select("*", { count: "exact", head: true }),
 
     supabaseServer
+      .from("personal_records")
+      .select("*", { count: "exact", head: true }),
+
+    supabaseServer
       .from("reminders")
       .select("*", { count: "exact", head: true }),
+
+    supabaseServer
+      .from("reminders")
+      .select("*", { count: "exact", head: true })
+      .gte("due_date", now.toISOString())
+      .lte(
+        "due_date",
+        thirtyDaysFromNow.toISOString()
+      ),
   ]);
 
   const { data: upcomingReminders } =
@@ -58,12 +81,16 @@ export default async function DashboardPage() {
 
   const documentCount = documentsResult.count ?? 0;
   const assetCount = assetsResult.count ?? 0;
+  const personalRecordCount =
+    personalRecordsResult.count ?? 0;
   const reminderCount = remindersResult.count ?? 0;
+  const expiringSoonCount =
+    expiringSoonResult.count ?? 0;
 
   const reminders =
   upcomingReminders?.map((reminder) => ({
     ...reminder,
-    relative: getRelativeDate(reminder.due_date),
+    relative: getRelativeDate(formatDate(reminder.due_date)),
   })) ?? [];
 
   return (
@@ -75,7 +102,7 @@ export default async function DashboardPage() {
           </p>
 
           <h1 className="text-3xl font-bold tracking-tight">
-            Here's what needs your attention.
+            Here&apos;s what needs your attention.
           </h1>
         </div>
 
@@ -106,47 +133,122 @@ export default async function DashboardPage() {
         </div>
       </div>
 
-      <div className="mt-8 grid gap-4 md:grid-cols-4">
-        <Card>
+     <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
+      <Link
+        href="/documents"
+        className="group"
+      >
+        <Card className="h-full transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Documents</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Documents
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">{documentCount}</p>
-            <p className="text-sm text-muted-foreground">stored securely</p>
-          </CardContent>
-        </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">Assets</CardTitle>
-          </CardHeader>
           <CardContent>
-            <p className="text-3xl font-bold">{assetCount}</p>
-            <p className="text-sm text-muted-foreground">tracked items</p>
-          </CardContent>
-        </Card>
+            <p className="text-3xl font-bold">
+              {documentCount}
+            </p>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium">Reminders</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">{reminderCount}</p>
-            <p className="text-sm text-muted-foreground">upcoming</p>
+            <p className="text-sm text-muted-foreground">
+              stored securely
+            </p>
           </CardContent>
         </Card>
+      </Link>
 
-        <Card>
+      <Link
+        href="/assets"
+        className="group"
+      >
+        <Card className="h-full transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">
           <CardHeader>
-            <CardTitle className="text-sm font-medium">Expiring Soon</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Assets
+            </CardTitle>
           </CardHeader>
+
           <CardContent>
-            <p className="text-3xl font-bold">2</p>
-            <p className="text-sm text-muted-foreground">next 30 days</p>
+            <p className="text-3xl font-bold">
+              {assetCount}
+            </p>
+
+            <p className="text-sm text-muted-foreground">
+              tracked items
+            </p>
           </CardContent>
         </Card>
-      </div>
+      </Link>
+
+      <Link
+        href="/personal-records"
+        className="group"
+      >
+        <Card className="h-full transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">
+              Personal Records
+            </CardTitle>
+          </CardHeader>
+
+          <CardContent>
+            <p className="text-3xl font-bold">
+              {personalRecordCount}
+            </p>
+
+            <p className="text-sm text-muted-foreground">
+              important records
+            </p>
+          </CardContent>
+        </Card>
+      </Link>
+
+      <Link
+        href="/reminders"
+        className="group"
+      >
+        <Card className="h-full transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">
+              Reminders
+            </CardTitle>
+          </CardHeader>
+
+          <CardContent>
+            <p className="text-3xl font-bold">
+              {reminderCount}
+            </p>
+
+            <p className="text-sm text-muted-foreground">
+              upcoming
+            </p>
+          </CardContent>
+        </Card>
+      </Link>
+
+      <Link
+        href="/reminders"
+        className="group"
+      >
+        <Card className="h-full transition-all hover:-translate-y-0.5 hover:border-primary/40 hover:shadow-md">
+          <CardHeader>
+            <CardTitle className="text-sm font-medium">
+              Expiring Soon
+            </CardTitle>
+          </CardHeader>
+
+          <CardContent>
+            <p className="text-3xl font-bold">
+              {expiringSoonCount}
+            </p>
+
+            <p className="text-sm text-muted-foreground">
+              next 30 days
+            </p>
+          </CardContent>
+        </Card>
+      </Link>
+    </div>
 
       <div className="mt-8 grid gap-6 lg:grid-cols-[2fr_1fr]">
         <Card>

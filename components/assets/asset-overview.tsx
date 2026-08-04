@@ -1,4 +1,5 @@
 import SectionCard from "@/components/ui/section-card";
+import { formatDate } from "@/lib/date/format-date";
 
 type Asset = {
   manufacturer: string | null;
@@ -40,7 +41,7 @@ export default function AssetOverview({
       <Row label="Manufacturer" value={asset.manufacturer} />
       <Row label="Model" value={asset.model} />
       <Row label="Serial Number" value={asset.serial_number} />
-      <Row label="Purchase Date" value={asset.purchase_date} />
+      <Row label="Purchase Date" value={formatDate(asset.purchase_date)} />
       <Row label="Category" value={asset.category} />
     </SectionCard>
   );

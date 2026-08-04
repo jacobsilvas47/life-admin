@@ -1,5 +1,5 @@
-import Link from "next/link";
 import { supabaseServer } from "@/lib/supabase-server";
+import DocumentPreview from "@/components/documents/document-preview";
 
 export default async function AssetDocuments({
   assetId,
@@ -12,16 +12,17 @@ export default async function AssetDocuments({
       document:documents (
         id,
         file_name,
-        file_type
+        file_type,
+        file_path
       )
     `)
     .eq("asset_id", assetId);
 
   if (error) {
     return (
-      <section className="border rounded-xl p-6 bg-white shadow-sm">
-        <h2 className="text-xl font-semibold mb-4">
-          Documents
+      <section className="rounded-xl border bg-white p-6 shadow-sm">
+        <h2 className="mb-4 text-xl font-semibold">
+          Related Documents
         </h2>
 
         <p className="text-red-500">
@@ -31,41 +32,79 @@ export default async function AssetDocuments({
     );
   }
 
-  return (
-    <section className="border rounded-xl p-6 bg-white shadow-sm">
-      <h2 className="text-xl font-semibold mb-4">
-        Documents
-      </h2>
+  if (!documents || documents.length === 0) {
+    return (
+      <section className="rounded-xl border bg-white p-6 shadow-sm">
+        <h2 className="mb-4 text-xl font-semibold">
+          Related Documents
+        </h2>
 
-      {documents.length === 0 ? (
-        <p className="text-gray-500">
+        <p className="text-muted-foreground">
           No documents linked yet.
         </p>
-      ) : (
-        <div className="space-y-3">
-          {documents.map((row: any) => (
-            <Link
-              key={row.document.id}
-              href={`/documents/${row.document.id}`}
-              className="flex justify-between border rounded-lg p-4 hover:bg-gray-50"
-            >
-              <div>
-                <p className="font-medium">
-                  📄 {row.document.file_name}
-                </p>
+      </section>
+    );
+  }
 
-                <p className="text-sm text-gray-500">
-                  {row.document.file_type}
-                </p>
-              </div>
+  const documentsWithUrls = await Promise.all(
+    documents.map(async (row) => {
+      const document = Array.isArray(row.document)
+        ? row.document[0]
+        : row.document;
 
-              <span className="text-gray-400">
-                →
-              </span>
-            </Link>
-          ))}
-        </div>
-      )}
+      if (!document) {
+        return null;
+      }
+
+      const { data } = await supabaseServer.storage
+        .from("documents")
+        .createSignedUrl(
+          document.file_path,
+          60 * 60
+        );
+
+      return {
+        ...document,
+        signedUrl: data?.signedUrl ?? null,
+      };
+    })
+  );
+
+  const validDocuments = documentsWithUrls.filter(
+    (document): document is NonNullable<typeof document> =>
+      document !== null
+  );
+
+  return (
+    <section className="rounded-xl border bg-white p-6 shadow-sm">
+      <h2 className="mb-4 text-xl font-semibold">
+        Related Documents
+      </h2>
+
+      <div className="space-y-6">
+        {validDocuments.map((document) => (
+          <div
+            key={document.id}
+            className="rounded-lg border p-4"
+          >
+            <h3 className="mb-4 font-medium">
+              {document.file_name}
+            </h3>
+
+            {document.signedUrl ? (
+              <DocumentPreview
+                fileName={document.file_name}
+                fileType={document.file_type}
+                signedUrl={document.signedUrl}
+              />
+            ) : (
+              <p className="text-muted-foreground">
+                Could not load preview.
+              </p>
+            )}
+          </div>
+        ))}
+      </div>
     </section>
   );
 }

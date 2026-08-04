@@ -5,38 +5,10 @@ import DeleteDocumentButton from "@/components/documents/delete-document-button"
 
 export default async function DocumentReviewPage({
     params,
-    searchParams,
   }: {
     params: Promise<{ id: string }>;
-    searchParams: Promise<{
-      queueIds?: string;
-      queueIndex?: string;
-    }>;
   }) {
-  
-  const { id } = await params;
-  const query = await searchParams;
-
-  const queueIds = query.queueIds ?? null;
-  const queueIndex = Number(query.queueIndex ?? "0");
-
-  const queueIdList = queueIds
-    ? decodeURIComponent(queueIds)
-        .split(",")
-        .filter(Boolean)
-    : [];
-
-  const nextQueueIndex = queueIndex + 1;
-
-  const nextQueueHref =
-    queueIdList.length > 0 &&
-    nextQueueIndex < queueIdList.length
-      ? `/documents/review-queue?ids=${encodeURIComponent(
-          queueIdList.join(",")
-        )}&index=${nextQueueIndex}`
-      : queueIdList.length > 0
-        ? "/documents"
-        : null;
+    const { id } = await params;
 
   const { data: document, error } = await supabaseServer
     .from("documents")
