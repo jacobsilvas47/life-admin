@@ -78,9 +78,9 @@ export default function DeleteAssetButton({
         title="Delete Asset"
         description={`Are you sure you want to delete "${assetName}"?
 
-This will also remove its warranties, reminders, activities, and document links.
+        This will also remove its warranties, reminders, activities, and document links.
 
-The original uploaded documents will remain available.`}
+        The original uploaded documents will remain available.`}
         confirmLabel="Delete Asset"
         isLoading={isDeleting}
         onCancel={() => {

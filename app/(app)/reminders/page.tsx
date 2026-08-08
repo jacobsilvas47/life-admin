@@ -1,7 +1,10 @@
 import { supabaseServer } from "@/lib/supabase-server";
 import RemindersList from "@/components/reminders/reminders-list";
+import { getUserSettings } from "@/lib/settings/get-user-settings";
 
 export default async function RemindersPage() {
+  const settings = await getUserSettings();
+
   const { data: reminders, error } =
     await supabaseServer
       .from("reminders")
@@ -45,6 +48,7 @@ export default async function RemindersPage() {
 
       <RemindersList
         reminders={reminders ?? []}
+        dateFormat={settings.date_format}
       />
     </main>
   );

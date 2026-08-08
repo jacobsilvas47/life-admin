@@ -2,8 +2,12 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+
 import SearchBar from "@/components/ui/search-bar";
-import { formatDate } from "@/lib/date/format-date";
+import {
+  formatDate,
+  type DateFormat,
+} from "@/lib/date/format-date";
 
 type Reminder = {
   id: string;
@@ -27,15 +31,19 @@ type Reminder = {
 
 export default function RemindersList({
   reminders,
+  dateFormat,
 }: {
   reminders: Reminder[];
+  dateFormat: DateFormat;
 }) {
   const [search, setSearch] = useState("");
 
   const filtered = useMemo(() => {
     const query = search.toLowerCase().trim();
 
-    if (!query) return reminders;
+    if (!query) {
+      return reminders;
+    }
 
     return reminders.filter((reminder) =>
       [
@@ -60,7 +68,12 @@ export default function RemindersList({
 
       <div className="space-y-4">
         {filtered.map((reminder) => {
-          const due = new Date(formatDate(reminder.due_date));
+          // Use the raw database date for calculations.
+          // Do NOT use the formatted display date here.
+          const due = new Date(
+            `${reminder.due_date}T12:00:00`
+          );
+
           const today = new Date();
 
           const diff = Math.ceil(
@@ -72,7 +85,11 @@ export default function RemindersList({
           let badgeColor =
             "bg-gray-100 text-gray-700";
 
-          if (diff < 0) {
+          if (reminder.completed) {
+            badge = "Completed";
+            badgeColor =
+              "bg-green-100 text-green-700";
+          } else if (diff < 0) {
             badge = "Overdue";
             badgeColor =
               "bg-red-100 text-red-700";
@@ -88,15 +105,19 @@ export default function RemindersList({
               href={`/reminders/${reminder.id}`}
               className="block"
             >
-              <div className="rounded-xl border p-5 transition hover:bg-muted/40 hover:border-primary">
-                <div className="flex items-start justify-between">
+              <div className="rounded-xl border p-5 transition hover:border-primary hover:bg-muted/40">
+                <div className="flex items-start justify-between gap-4">
                   <div>
                     <h2 className="text-lg font-semibold">
                       {reminder.title}
                     </h2>
 
                     <p className="text-sm text-muted-foreground">
-                      Due {formatDate(reminder.due_date)}
+                      Due{" "}
+                      {formatDate(
+                        reminder.due_date,
+                        dateFormat
+                      )}
                     </p>
 
                     {reminder.assets && (
