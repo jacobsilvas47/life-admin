@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
 type Settings = {
@@ -83,6 +83,41 @@ export default function SettingsForm({
   const [isSaving, setIsSaving] =
     useState(false);
 
+    const [savedSettings, setSavedSettings] =
+  useState({
+    dateFormat: settings.date_format,
+    timezone: settings.timezone,
+    emailNotifications:
+      settings.email_notifications,
+    defaultNotificationOffsets: [
+      ...(settings.default_notification_offsets ??
+        [30, 7, 1]),
+    ].sort((a, b) => b - a),
+  });
+
+const hasChanges = useMemo(() => {
+  const currentOffsets = [
+    ...defaultNotificationOffsets,
+  ].sort((a, b) => b - a);
+
+  return (
+    dateFormat !== savedSettings.dateFormat ||
+    timezone !== savedSettings.timezone ||
+    emailNotifications !==
+      savedSettings.emailNotifications ||
+    JSON.stringify(currentOffsets) !==
+      JSON.stringify(
+        savedSettings.defaultNotificationOffsets
+      )
+  );
+}, [
+  dateFormat,
+  timezone,
+  emailNotifications,
+  defaultNotificationOffsets,
+  savedSettings,
+]);
+
   function toggleOffset(offset: number) {
     setDefaultNotificationOffsets((current) =>
       current.includes(offset)
@@ -128,6 +163,15 @@ export default function SettingsForm({
             "Failed to update settings."
         );
       }
+
+      setSavedSettings({
+        dateFormat,
+        timezone,
+        emailNotifications,
+        defaultNotificationOffsets: [
+          ...defaultNotificationOffsets,
+        ].sort((a, b) => b - a),
+      });
 
       toast.success("Settings updated.");
     } catch (error: unknown) {
@@ -293,12 +337,14 @@ export default function SettingsForm({
         <button
           type="button"
           onClick={saveSettings}
-          disabled={isSaving}
+          disabled={isSaving || !hasChanges}
           className="rounded-lg bg-black px-6 py-3 font-medium text-white transition hover:bg-black/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSaving
-            ? "Saving..."
-            : "Save Settings"}
+        ? "Saving..."
+        : hasChanges
+          ? "Save Changes"
+          : "Saved"}
         </button>
       </div>
     </div>

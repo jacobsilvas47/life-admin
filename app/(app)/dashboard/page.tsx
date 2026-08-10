@@ -1,12 +1,23 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { supabaseServer } from "@/lib/supabase-server";
+import { createAuthServerClient } from "@/lib/supabase-auth-server";
 import { getRelativeDate } from "@/lib/date/get-relative-date";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/date/format-date";
 
+
 export default async function DashboardPage() {
+    const authSupabase = await createAuthServerClient();
+
+    const {
+      data: { user },
+    } = await authSupabase.auth.getUser();
+
+    if (!user) {
+      return null;
+    }
   const now = new Date();
 
   const thirtyDaysFromNow = new Date();
@@ -14,7 +25,7 @@ export default async function DashboardPage() {
     thirtyDaysFromNow.getDate() + 30
   );
 
-  const [
+    const [
     documentsResult,
     assetsResult,
     personalRecordsResult,
@@ -23,23 +34,28 @@ export default async function DashboardPage() {
   ] = await Promise.all([
     supabaseServer
       .from("documents")
-      .select("*", { count: "exact", head: true }),
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id),
 
     supabaseServer
       .from("assets")
-      .select("*", { count: "exact", head: true }),
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id),
 
     supabaseServer
       .from("personal_records")
-      .select("*", { count: "exact", head: true }),
-
-    supabaseServer
-      .from("reminders")
-      .select("*", { count: "exact", head: true }),
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id),
 
     supabaseServer
       .from("reminders")
       .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id),
+
+    supabaseServer
+      .from("reminders")
+      .select("*", { count: "exact", head: true })
+      .eq("user_id", user.id)
       .gte("due_date", now.toISOString())
       .lte(
         "due_date",
@@ -47,7 +63,7 @@ export default async function DashboardPage() {
       ),
   ]);
 
-  const { data: upcomingReminders } =
+    const { data: upcomingReminders } =
     await supabaseServer
       .from("reminders")
       .select(`
@@ -57,20 +73,23 @@ export default async function DashboardPage() {
           title
         )
       `)
+      .eq("user_id", user.id)
       .order("due_date")
       .limit(5);
 
-  const { data: activities, error: activitiesError } =
+    const { data: activities, error: activitiesError } =
     await supabaseServer
       .from("activities")
       .select("*")
+      .eq("user_id", user.id)
       .order("created_at", { ascending: false })
       .limit(5);
 
-  const { data: pendingDocuments } =
+    const { data: pendingDocuments } =
     await supabaseServer
       .from("documents")
       .select("id, original_filename, status")
+      .eq("user_id", user.id)
       .eq("status", "complete")
       .order("uploaded_at", { ascending: false })
       .limit(5);
