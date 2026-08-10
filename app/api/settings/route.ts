@@ -1,36 +1,47 @@
 import { NextResponse } from "next/server";
+
 import { supabaseServer } from "@/lib/supabase-server";
+import { createAuthServerClient } from "@/lib/supabase-auth-server";
 
 export async function PATCH(request: Request) {
   try {
-    const body = await request.json();
+    const authSupabase =
+      await createAuthServerClient();
 
-    if (!body.id) {
+    const {
+      data: { user },
+      error: authError,
+    } = await authSupabase.auth.getUser();
+
+    if (authError || !user) {
       return NextResponse.json(
         {
           success: false,
-          error: "Missing settings ID.",
+          error: "Unauthorized.",
         },
         {
-          status: 400,
+          status: 401,
         }
       );
     }
 
-    const { data, error } = await supabaseServer
-      .from("user_settings")
-      .update({
-        date_format: body.dateFormat,
-        timezone: body.timezone,
-        email_notifications:
-          body.emailNotifications,
-        default_notification_offsets:
-          body.defaultNotificationOffsets,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", body.id)
-      .select()
-      .single();
+    const body = await request.json();
+
+    const { data, error } =
+      await supabaseServer
+        .from("user_settings")
+        .update({
+          date_format: body.dateFormat,
+          timezone: body.timezone,
+          email_notifications:
+            body.emailNotifications,
+          default_notification_offsets:
+            body.defaultNotificationOffsets,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("user_id", user.id)
+        .select()
+        .single();
 
     if (error) {
       throw error;
@@ -41,7 +52,10 @@ export async function PATCH(request: Request) {
       settings: data,
     });
   } catch (error: unknown) {
-    console.error("Update settings error:", error);
+    console.error(
+      "Update settings error:",
+      error
+    );
 
     const message =
       error instanceof Error

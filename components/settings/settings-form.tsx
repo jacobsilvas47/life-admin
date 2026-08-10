@@ -146,7 +146,6 @@ const hasChanges = useMemo(() => {
             "Content-Type": "application/json",
           },
           body: JSON.stringify({
-            id: settings.id,
             dateFormat,
             timezone,
             emailNotifications,

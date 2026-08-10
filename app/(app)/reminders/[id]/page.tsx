@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 
 import { supabaseServer } from "@/lib/supabase-server";
+import { createAuthServerClient } from "@/lib/supabase-auth-server";
 import BackButton from "@/components/ui/back-button";
 import {
   Card,
@@ -19,6 +20,17 @@ export default async function ReminderPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+
+  const authSupabase =
+    await createAuthServerClient();
+
+  const {
+    data: { user },
+  } = await authSupabase.auth.getUser();
+
+  if (!user) {
+    notFound();
+  }
 
   const settings = await getUserSettings();
 
@@ -41,6 +53,7 @@ export default async function ReminderPage({
         )
       `)
       .eq("id", id)
+      .eq("user_id", user.id)
       .single();
 
   if (error || !reminder) {

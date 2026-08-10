@@ -1,6 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+
 import { supabaseServer } from "@/lib/supabase-server";
+import { createAuthServerClient } from "@/lib/supabase-auth-server";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import DocumentPreview from "@/components/documents/document-preview";
 import BackButton from "@/components/ui/back-button";
@@ -14,14 +16,27 @@ export default async function PersonalRecordPage({
 }) {
   const { id } = await params;
 
-    const { data: record, error } = await supabaseServer
-    .from("personal_records")
-    .select(`
+  const authSupabase =
+    await createAuthServerClient();
+
+  const {
+    data: { user },
+  } = await authSupabase.auth.getUser();
+
+  if (!user) {
+    notFound();
+  }
+
+  const { data: record, error } =
+    await supabaseServer
+      .from("personal_records")
+      .select(`
         *,
         documents (*)
-    `)
-    .eq("id", id)
-    .single();
+      `)
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .single();
 
   if (error || !record) {
     notFound();
@@ -29,16 +44,17 @@ export default async function PersonalRecordPage({
 
   let documentUrl: string | null = null;
 
-    if (record.documents?.file_path) {
-    const { data } = await supabaseServer.storage
+  if (record.documents?.file_path) {
+    const { data } =
+      await supabaseServer.storage
         .from("documents")
         .createSignedUrl(
-        record.documents.file_path,
-        60 * 60
+          record.documents.file_path,
+          60 * 60
         );
 
     documentUrl = data?.signedUrl ?? null;
-    }
+  }
 
   return (
     <main className="max-w-5xl mx-auto p-8 space-y-6">
@@ -46,39 +62,44 @@ export default async function PersonalRecordPage({
         fallbackHref="/personal-records"
         label="Back to Personal Records"
       />
-        <div className="flex items-start justify-between gap-8">
-          <div className="flex-1">
-            <h1 className="text-3xl font-bold">
-              {record.title}
-            </h1>
 
-            <p className="text-muted-foreground capitalize">
-              {record.record_type.replaceAll("_", " ")}
-            </p>
-          </div>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold">
+            {record.title}
+          </h1>
 
-          <div className="flex shrink-0 items-center gap-2">
-            <Link
-              href={`/personal-records/${record.id}/edit`}
-              className="rounded-lg border px-4 py-2 text-sm font-medium transition hover:bg-gray-100"
-            >
-              ✏️ Edit
-            </Link>
-
-            <DeletePersonalRecordButton
-              recordId={record.id}
-              recordTitle={record.title}
-            />
-          </div>
+          <p className="text-muted-foreground capitalize">
+            {record.record_type.replaceAll(
+              "_",
+              " "
+            )}
+          </p>
         </div>
+
+        <div className="flex shrink-0 items-center gap-2">
+          <Link
+            href={`/personal-records/${record.id}/edit`}
+            className="rounded-lg border px-4 py-2 text-sm font-medium transition hover:bg-gray-100"
+          >
+            ✏️ Edit
+          </Link>
+
+          <DeletePersonalRecordButton
+            recordId={record.id}
+            recordTitle={record.title}
+          />
+        </div>
+      </div>
 
       <Card>
         <CardHeader>
-          <CardTitle>Record Information</CardTitle>
+          <CardTitle>
+            Record Information
+          </CardTitle>
         </CardHeader>
 
         <CardContent className="space-y-4">
-
           <InfoRow
             label="Issuing Country"
             value={record.issuing_country}
@@ -86,41 +107,51 @@ export default async function PersonalRecordPage({
 
           <InfoRow
             label="Issue Date"
-            value={formatDate(record.issue_date)}
+            value={formatDate(
+              record.issue_date
+            )}
           />
 
           <InfoRow
             label="Expiration Date"
-            value={formatDate(record.expiration_date)}
+            value={formatDate(
+              record.expiration_date
+            )}
           />
 
           <InfoRow
             label="Identifier"
             value={record.identifier}
           />
-
         </CardContent>
       </Card>
 
-        <Card>
+      <Card>
         <CardHeader>
-            <CardTitle>Original Document</CardTitle>
+          <CardTitle>
+            Original Document
+          </CardTitle>
         </CardHeader>
 
         <CardContent>
-            {documentUrl && record.documents ? (
+          {documentUrl &&
+          record.documents ? (
             <DocumentPreview
-                fileName={record.documents.file_name}
-                fileType={record.documents.file_type}
-                signedUrl={documentUrl}
+              fileName={
+                record.documents.file_name
+              }
+              fileType={
+                record.documents.file_type
+              }
+              signedUrl={documentUrl}
             />
-            ) : (
+          ) : (
             <p className="text-muted-foreground">
-                No document attached.
+              No document attached.
             </p>
-            )}
+          )}
         </CardContent>
-        </Card>
+      </Card>
     </main>
   );
 }

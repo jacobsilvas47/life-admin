@@ -1,38 +1,19 @@
-import { supabaseServer } from "@/lib/supabase-server";
 import SettingsForm from "@/components/settings/settings-form";
+import { getUserSettings } from "@/lib/settings/get-user-settings";
 
 export default async function SettingsPage() {
-  const { data: settings, error } =
-    await supabaseServer
-      .from("user_settings")
-      .select("*")
-      .limit(1)
-      .single();
-
-  if (error || !settings) {
-    return (
-      <main className="mx-auto max-w-4xl p-8">
-        <h1 className="text-3xl font-bold">
-          Settings
-        </h1>
-
-        <p className="mt-4 text-red-500">
-          {error?.message ??
-            "Could not load settings."}
-        </p>
-      </main>
-    );
-  }
+  const settings = await getUserSettings();
 
   return (
-    <main className="mx-auto max-w-4xl space-y-8 p-8">
-      <div>
+    <main className="max-w-5xl mx-auto p-8">
+      <div className="mb-8">
         <h1 className="text-3xl font-bold">
           Settings
         </h1>
 
         <p className="mt-2 text-muted-foreground">
-          Manage your display and notification preferences.
+          Manage your display and notification
+          preferences.
         </p>
       </div>
 
