@@ -1,5 +1,8 @@
 import { notFound } from "next/navigation";
+
 import { supabaseServer } from "@/lib/supabase-server";
+import { getEntitlements } from "@/lib/subscriptions/get-entitlements";
+
 import BackButton from "@/components/ui/back-button";
 import ReminderEditForm from "@/components/reminders/reminder-edit-form";
 
@@ -9,6 +12,12 @@ export default async function ReminderEditPage({
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+
+  /*
+   * Load the current user's subscription
+   * entitlements on the server.
+   */
+  const entitlements = await getEntitlements();
 
   const { data: reminder, error } =
     await supabaseServer
@@ -38,7 +47,12 @@ export default async function ReminderEditPage({
         </p>
       </div>
 
-      <ReminderEditForm reminder={reminder} />
+      <ReminderEditForm
+        reminder={reminder}
+        canUseAdvancedReminders={
+          entitlements.canUseAdvancedReminders
+        }
+      />
     </main>
   );
 }

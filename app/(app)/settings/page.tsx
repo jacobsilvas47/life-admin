@@ -3,6 +3,8 @@ import { getUserSettings } from "@/lib/settings/get-user-settings";
 import { getEntitlements } from "@/lib/subscriptions/get-entitlements";
 import { getUserSubscription } from "@/lib/subscriptions/get-user-subscription";
 import { supabaseServer } from "@/lib/supabase-server";
+import Link from "next/link";
+import { Button } from "@/components/ui/button";
 
 export default async function SettingsPage() {
   const settings = await getUserSettings();
@@ -60,13 +62,11 @@ export default async function SettingsPage() {
           </div>
 
           {!entitlements.isPremium && (
-            <button
-              type="button"
-              disabled
-              className="rounded-lg bg-black px-5 py-2.5 text-sm font-medium text-white opacity-50"
-            >
-              Upgrade to Premium
-            </button>
+            <Button asChild>
+              <Link href="/upgrade">
+                Upgrade to Premium
+              </Link>
+            </Button>
           )}
         </div>
 

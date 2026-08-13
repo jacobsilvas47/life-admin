@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { supabaseServer } from "@/lib/supabase-server";
 import { createAuthServerClient } from "@/lib/supabase-auth-server";
 import { createActivity } from "@/lib/activity/create-activity";
+import { getEntitlements } from "@/lib/subscriptions/get-entitlements";
 
 async function getAuthenticatedUser() {
   const authSupabase =
@@ -46,6 +47,13 @@ export async function PATCH(
     const { id } = await params;
     const body = await request.json();
 
+    const entitlements = await getEntitlements();
+
+    const notificationOffsets =
+      entitlements.canUseAdvancedReminders
+        ? body.notificationOffsets
+        : [7];
+
     const { data: reminder, error } =
       await supabaseServer
         .from("reminders")
@@ -54,7 +62,7 @@ export async function PATCH(
           due_date: body.dueDate,
           completed: body.completed,
           notification_offsets:
-            body.notificationOffsets,
+            notificationOffsets,
           notes: body.notes,
         })
         .eq("id", id)
