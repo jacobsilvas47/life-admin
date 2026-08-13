@@ -89,29 +89,49 @@ export default function UploadDropzone() {
         return;
       }
 
-      const response = await fetch(
-        "/api/import-session",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            totalDocuments: acceptedFiles.length,
-          }),
-        }
-      );
+  let importSession;
 
-      const result = await response.json();
+  try {
+    const response = await fetch(
+      "/api/import-session",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          totalDocuments: acceptedFiles.length,
+        }),
+      }
+    );
 
-      if (!response.ok || !result.success) {
-        throw new Error(
-          result.error ??
-            "Failed to create import session."
-        );
+    const result = await response.json();
+
+    if (!response.ok || !result.success) {
+      if (
+        result.code ===
+        "DOCUMENT_LIMIT_REACHED"
+      ) {
+        toast.error(result.error);
+        return;
       }
 
-      const importSession = result.session;
+      throw new Error(
+        result.error ??
+          "Failed to create import session."
+      );
+    }
+
+    importSession = result.session;
+  } catch (error: unknown) {
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Failed to start document upload.";
+
+    toast.error(message);
+    return;
+  }
 
       const queuedUploads: UploadItem[] =
         acceptedFiles.map((file) => ({
