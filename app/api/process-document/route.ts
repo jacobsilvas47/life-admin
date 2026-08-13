@@ -1,6 +1,8 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
+
 import { supabaseServer } from "@/lib/supabase-server";
+import { createAuthServerClient } from "@/lib/supabase-auth-server";
 import { DOCUMENT_EXTRACTION_PROMPT } from "@/lib/ai/prompts";
 import { getSuggestedActions } from "@/lib/ai/get-suggested-actions";
 import { createActivity } from "@/lib/activity/create-activity";
@@ -12,65 +14,145 @@ const openai = new OpenAI({
 
 export async function POST(req: Request) {
   try {
+    const authSupabase =
+      await createAuthServerClient();
+
+    const {
+      data: { user },
+      error: authError,
+    } = await authSupabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Unauthorized.",
+        },
+        {
+          status: 401,
+        }
+      );
+    }
+
     const { documentId } = await req.json();
 
     if (!documentId) {
       return NextResponse.json(
-        { success: false, error: "Missing documentId." },
-        { status: 400 }
+        {
+          success: false,
+          error: "Missing documentId.",
+        },
+        {
+          status: 400,
+        }
       );
     }
 
-    await supabaseServer
-      .from("documents")
-      .update({ status: "processing", error_message: null })
-      .eq("id", documentId);
-
-    const { data: document, error: documentError } = await supabaseServer
+    /*
+     * Verify ownership BEFORE changing the document,
+     * creating a signed URL, or sending anything to AI.
+     */
+    const {
+      data: document,
+      error: documentError,
+    } = await supabaseServer
       .from("documents")
       .select("*")
       .eq("id", documentId)
-      .single();
+      .eq("user_id", user.id)
+      .maybeSingle();
 
-    if (documentError || !document) {
-      throw new Error(documentError?.message ?? "Document not found.");
+    if (documentError) {
+      throw documentError;
     }
 
-    const { data: signedUrlData, error: signedUrlError } =
-      await supabaseServer.storage
+    if (!document) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Document not found.",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+
+    /*
+     * Ownership has been confirmed.
+     * The document can now safely enter processing.
+     */
+    const { error: processingError } =
+      await supabaseServer
         .from("documents")
-        .createSignedUrl(document.file_path, 60);
+        .update({
+          status: "processing",
+          error_message: null,
+        })
+        .eq("id", document.id)
+        .eq("user_id", user.id);
 
-    if (signedUrlError || !signedUrlData?.signedUrl) {
-      throw new Error(signedUrlError?.message ?? "Could not create signed URL.");
+    if (processingError) {
+      throw processingError;
     }
 
-    const userContent: OpenAI.Responses.ResponseInputContent[] = [];
+    const {
+      data: signedUrlData,
+      error: signedUrlError,
+    } = await supabaseServer.storage
+      .from("documents")
+      .createSignedUrl(
+        document.file_path,
+        60
+      );
+
+    if (
+      signedUrlError ||
+      !signedUrlData?.signedUrl
+    ) {
+      throw new Error(
+        signedUrlError?.message ??
+          "Could not create signed URL."
+      );
+    }
+
+    const userContent:
+      OpenAI.Responses.ResponseInputContent[] = [];
 
     const isHeic =
       document.file_type === "image/heic" ||
       document.file_type === "image/heif";
 
     if (isHeic) {
-      const imageResponse = await fetch(signedUrlData.signedUrl);
+      const imageResponse = await fetch(
+        signedUrlData.signedUrl
+      );
 
       if (!imageResponse.ok) {
-        throw new Error("Could not download the HEIC image.");
+        throw new Error(
+          "Could not download the HEIC image."
+        );
       }
 
       const heicBuffer = Buffer.from(
         await imageResponse.arrayBuffer()
       );
 
-      const jpegBuffer = await convertHeicToJpeg(heicBuffer);
-      const jpegBase64 = jpegBuffer.toString("base64");
+      const jpegBuffer =
+        await convertHeicToJpeg(heicBuffer);
+
+      const jpegBase64 =
+        jpegBuffer.toString("base64");
 
       userContent.push({
         type: "input_image",
-        image_url: `data:image/jpeg;base64,${jpegBase64}`,
+        image_url:
+          `data:image/jpeg;base64,${jpegBase64}`,
         detail: "auto",
       });
-    } else if (document.file_type.startsWith("image/")) {
+    } else if (
+      document.file_type.startsWith("image/")
+    ) {
       userContent.push({
         type: "input_image",
         image_url: signedUrlData.signedUrl,
@@ -83,60 +165,96 @@ export async function POST(req: Request) {
       });
     }
 
-    const response = await openai.responses.create({
-      model: "gpt-5-mini",
-      input: [
+    const response =
+      await openai.responses.create({
+        model: "gpt-5-mini",
+        input: [
           {
             role: "system",
-            content: DOCUMENT_EXTRACTION_PROMPT,
+            content:
+              DOCUMENT_EXTRACTION_PROMPT,
           },
-        {
-          role: "user",
-          content: userContent,
-        },
-      ],
-    });
+          {
+            role: "user",
+            content: userContent,
+          },
+        ],
+      });
 
-      let extracted;
+    let extracted;
 
-      try {
-        extracted = JSON.parse(response.output_text);
-      } catch {
-        console.error("Invalid AI response:");
-        console.error(response.output_text);
-
-        throw new Error("The AI returned an invalid response.");
-      }
-
-      extracted.suggestedActions = getSuggestedActions(
-        extracted.documentCategory ?? "",
-        extracted.recordType || extracted.documentType || ""
+    try {
+      extracted = JSON.parse(
+        response.output_text
+      );
+    } catch {
+      console.error(
+        "Invalid AI response:"
+      );
+      console.error(
+        response.output_text
       );
 
-      console.log("Document Type:", extracted.documentType);
-      console.log("Document Category:", extracted.documentCategory);
-      console.log("Suggested Actions:", extracted.suggestedActions);
+      throw new Error(
+        "The AI returned an invalid response."
+      );
+    }
 
-      console.log("AI Extraction:", extracted);
+    extracted.suggestedActions =
+      getSuggestedActions(
+        extracted.documentCategory ?? "",
+        extracted.recordType ||
+          extracted.documentType ||
+          ""
+      );
 
-    const { error: updateError } = await supabaseServer
-      .from("documents")
-      .update({
-        status: "complete",
-        extracted_data: extracted,
-      })
-      .eq("id", documentId);
+    console.log(
+      "Document Type:",
+      extracted.documentType
+    );
+
+    console.log(
+      "Document Category:",
+      extracted.documentCategory
+    );
+
+    console.log(
+      "Suggested Actions:",
+      extracted.suggestedActions
+    );
+
+    console.log(
+      "AI Extraction:",
+      extracted
+    );
+
+    /*
+     * Require ownership again when writing
+     * the finished AI result.
+     */
+    const { error: updateError } =
+      await supabaseServer
+        .from("documents")
+        .update({
+          status: "complete",
+          extracted_data: extracted,
+        })
+        .eq("id", document.id)
+        .eq("user_id", user.id);
 
     if (updateError) {
-      throw new Error(updateError.message);
+      throw updateError;
     }
 
     await createActivity({
-      documentId,
+      documentId: document.id,
       activityType: "document_processed",
-      title: `Processed ${extracted.documentType || "document"}`,
+      title: `Processed ${
+        extracted.documentType || "document"
+      }`,
       metadata: {
-        category: extracted.documentCategory,
+        category:
+          extracted.documentCategory,
         confidence: extracted.confidence,
       },
     });
@@ -146,21 +264,24 @@ export async function POST(req: Request) {
       result: extracted,
     });
   } catch (error: unknown) {
-  console.error("Process document error:", error);
+    console.error(
+      "Process document error:",
+      error
+    );
 
-  const message =
-    error instanceof Error
-      ? error.message
-      : "Failed to process document.";
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Failed to process document.";
 
-  return NextResponse.json(
-    {
-      success: false,
-      error: message,
-    },
-    {
-      status: 500,
-    }
-  );
-}
+    return NextResponse.json(
+      {
+        success: false,
+        error: message,
+      },
+      {
+        status: 500,
+      }
+    );
+  }
 }

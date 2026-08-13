@@ -46,10 +46,12 @@ export async function processDueNotifications() {
       }
 
       await sendReminderEmail({
+        recipient: notification.email,
         title: notification.title,
         dueDate: notification.dueDate,
         notificationOffset:
           notification.notificationOffset,
+        dateFormat: notification.dateFormat,
         notes: notification.notes,
       });
 

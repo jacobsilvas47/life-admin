@@ -1,6 +1,24 @@
 import { NextResponse } from "next/server";
+
 import { supabaseServer } from "@/lib/supabase-server";
+import { createAuthServerClient } from "@/lib/supabase-auth-server";
 import { createActivity } from "@/lib/activity/create-activity";
+
+async function getAuthenticatedUser() {
+  const authSupabase =
+    await createAuthServerClient();
+
+  const {
+    data: { user },
+    error,
+  } = await authSupabase.auth.getUser();
+
+  if (error || !user) {
+    return null;
+  }
+
+  return user;
+}
 
 export async function PATCH(
   request: Request,
@@ -11,30 +29,61 @@ export async function PATCH(
   }
 ) {
   try {
-    const { id } = await params;
+    const user = await getAuthenticatedUser();
 
+    if (!user) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Unauthorized.",
+        },
+        {
+          status: 401,
+        }
+      );
+    }
+
+    const { id } = await params;
     const body = await request.json();
 
-    const { error } = await supabaseServer
-      .from("personal_records")
-      .update({
-        title: body.title,
-        record_type: body.recordType,
-        issuing_country: body.issuingCountry,
-        issue_date: body.issueDate || null,
-        expiration_date: body.expirationDate || null,
-        identifier: body.identifier,
-      })
-      .eq("id", id);
+    const { data: record, error } =
+      await supabaseServer
+        .from("personal_records")
+        .update({
+          title: body.title,
+          record_type: body.recordType,
+          issuing_country: body.issuingCountry,
+          issue_date: body.issueDate || null,
+          expiration_date:
+            body.expirationDate || null,
+          identifier: body.identifier,
+        })
+        .eq("id", id)
+        .eq("user_id", user.id)
+        .select("id, title")
+        .maybeSingle();
 
     if (error) {
       throw error;
     }
 
+    if (!record) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Personal record not found.",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+
     await createActivity({
-      personalRecordId: id,
-      activityType: "personal_record_updated",
-      title: `Updated personal record: ${body.title}`,
+      personalRecordId: record.id,
+      activityType:
+        "personal_record_updated",
+      title: `Updated personal record: ${record.title}`,
     });
 
     return NextResponse.json({
@@ -64,7 +113,7 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  request: Request,
+  _request: Request,
   {
     params,
   }: {
@@ -72,15 +121,87 @@ export async function DELETE(
   }
 ) {
   try {
+    const user = await getAuthenticatedUser();
+
+    if (!user) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Unauthorized.",
+        },
+        {
+          status: 401,
+        }
+      );
+    }
+
     const { id } = await params;
 
-    const { error } = await supabaseServer
+    /*
+     * Verify ownership first.
+     * Never delete based only on a client-supplied UUID.
+     */
+    const {
+      data: record,
+      error: lookupError,
+    } = await supabaseServer
       .from("personal_records")
-      .delete()
-      .eq("id", id);
+      .select("id")
+      .eq("id", id)
+      .eq("user_id", user.id)
+      .maybeSingle();
 
-    if (error) {
-      throw error;
+    if (lookupError) {
+      throw lookupError;
+    }
+
+    if (!record) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Personal record not found.",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+
+    /*
+     * Remove dependent records belonging to this
+     * personal record before deleting the record.
+     */
+    const { error: remindersError } =
+      await supabaseServer
+        .from("reminders")
+        .delete()
+        .eq("personal_record_id", record.id)
+        .eq("user_id", user.id);
+
+    if (remindersError) {
+      throw remindersError;
+    }
+
+    const { error: activitiesError } =
+      await supabaseServer
+        .from("activities")
+        .delete()
+        .eq("personal_record_id", record.id)
+        .eq("user_id", user.id);
+
+    if (activitiesError) {
+      throw activitiesError;
+    }
+
+    const { error: deleteError } =
+      await supabaseServer
+        .from("personal_records")
+        .delete()
+        .eq("id", record.id)
+        .eq("user_id", user.id);
+
+    if (deleteError) {
+      throw deleteError;
     }
 
     return NextResponse.json({

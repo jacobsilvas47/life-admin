@@ -1,16 +1,20 @@
 import { Resend } from "resend";
 
-import { formatDate } from "@/lib/date/format-date";
-import { getUserSettings } from "@/lib/settings/get-user-settings";
+import {
+  formatDate,
+  type DateFormat,
+} from "@/lib/date/format-date";
 
 const resend = new Resend(
   process.env.RESEND_API_KEY
 );
 
 type SendReminderEmailInput = {
+  recipient: string;
   title: string;
   dueDate: string;
   notificationOffset: number;
+  dateFormat: DateFormat;
   notes?: string | null;
 };
 
@@ -27,83 +31,78 @@ function getTimingText(offset: number) {
 }
 
 export async function sendReminderEmail({
+  recipient,
   title,
   dueDate,
   notificationOffset,
+  dateFormat,
   notes,
 }: SendReminderEmailInput) {
-  const recipient =
-    process.env.REMINDER_EMAIL_TO;
-
-  if (!recipient) {
-    throw new Error(
-      "REMINDER_EMAIL_TO is not configured."
-    );
-  }
-
   if (!process.env.RESEND_API_KEY) {
     throw new Error(
       "RESEND_API_KEY is not configured."
     );
   }
 
-  const settings = await getUserSettings();
-
   const formattedDueDate = formatDate(
     dueDate,
-    settings.date_format
+    dateFormat
   );
 
   const timingText = getTimingText(
     notificationOffset
   );
 
-  const { data, error } = await resend.emails.send({
-    /*
-     * Resend's testing sender works while developing.
-     * We'll replace this with our Life Admin domain later.
-     */
-    from: "Life Admin <onboarding@resend.dev>",
+  const { data, error } =
+    await resend.emails.send({
+      /*
+       * Keep the Resend testing sender for now.
+       * We'll replace this when Life Admin
+       * has its production email domain.
+       */
+      from:
+        "Life Admin <onboarding@resend.dev>",
 
-    to: recipient,
+      to: recipient,
 
-    subject: `${title} is ${timingText}`,
+      subject:
+        `${title} is ${timingText}`,
 
-    html: `
-      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <h1 style="font-size: 24px;">
-          Life Admin Reminder
-        </h1>
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+          <h1 style="font-size: 24px;">
+            Life Admin Reminder
+          </h1>
 
-        <h2>
-          ${title}
-        </h2>
+          <h2>
+            ${title}
+          </h2>
 
-        <p>
-          This reminder is <strong>${timingText}</strong>.
-        </p>
+          <p>
+            This reminder is <strong>${timingText}</strong>.
+          </p>
 
-        <p>
-          Due date: <strong>${formattedDueDate}</strong>
-        </p>
+          <p>
+            Due date: <strong>${formattedDueDate}</strong>
+          </p>
 
-        ${
-          notes
-            ? `
-              <div style="margin-top: 24px;">
-                <strong>Notes</strong>
-                <p>${notes}</p>
-              </div>
-            `
-            : ""
-        }
+          ${
+            notes
+              ? `
+                <div style="margin-top: 24px;">
+                  <strong>Notes</strong>
+                  <p>${notes}</p>
+                </div>
+              `
+              : ""
+          }
 
-        <p style="margin-top: 32px; color: #666;">
-          Sent by Life Admin
-        </p>
-      </div>
-    `,
-  });
+          <p style="margin-top: 32px; color: #666;">
+            Sent by Life Admin
+          </p>
+        </div>
+      `,
+    });
 
   if (error) {
     throw new Error(error.message);

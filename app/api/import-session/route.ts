@@ -1,9 +1,32 @@
 import { NextResponse } from "next/server";
+
 import { supabaseServer } from "@/lib/supabase-server";
+import { createAuthServerClient } from "@/lib/supabase-auth-server";
 
 export async function POST(req: Request) {
   try {
-    const { totalDocuments } = await req.json();
+    const authSupabase =
+      await createAuthServerClient();
+
+    const {
+      data: { user },
+      error: authError,
+    } = await authSupabase.auth.getUser();
+
+    if (authError || !user) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Unauthorized.",
+        },
+        {
+          status: 401,
+        }
+      );
+    }
+
+    const { totalDocuments } =
+      await req.json();
 
     if (
       typeof totalDocuments !== "number" ||
@@ -24,6 +47,7 @@ export async function POST(req: Request) {
       await supabaseServer
         .from("import_sessions")
         .insert({
+          user_id: user.id,
           total_documents: totalDocuments,
         })
         .select()
@@ -37,13 +61,21 @@ export async function POST(req: Request) {
       success: true,
       session: data,
     });
-  } catch (error) {
-    console.error(error);
+  } catch (error: unknown) {
+    console.error(
+      "Create import session error:",
+      error
+    );
+
+    const message =
+      error instanceof Error
+        ? error.message
+        : "Could not create import session.";
 
     return NextResponse.json(
       {
         success: false,
-        error: "Could not create import session.",
+        error: message,
       },
       {
         status: 500,

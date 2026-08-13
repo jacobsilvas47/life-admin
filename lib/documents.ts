@@ -7,9 +7,21 @@ export async function createDocumentRecord(
 ) {
   const supabase = createClient();
 
+  const {
+    data: { user },
+    error: authError,
+  } = await supabase.auth.getUser();
+
+  if (authError || !user) {
+    throw new Error(
+      "You must be signed in to upload documents."
+    );
+  }
+
   const { data, error } = await supabase
     .from("documents")
     .insert({
+      user_id: user.id,
       file_name: file.name,
       file_path: storagePath,
       file_type: file.type,
@@ -20,7 +32,9 @@ export async function createDocumentRecord(
     .select()
     .single();
 
-  if (error) throw error;
+  if (error) {
+    throw error;
+  }
 
   return data;
 }

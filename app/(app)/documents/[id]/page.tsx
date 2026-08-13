@@ -5,6 +5,7 @@ import DocumentPreview from "@/components/documents/document-preview";
 import SectionCard from "@/components/ui/section-card";
 import BackButton from "@/components/ui/back-button";
 import { Button } from "@/components/ui/button";
+import { createAuthServerClient } from "@/lib/supabase-auth-server";
 
 export default async function DocumentDetailsPage({
   params,
@@ -13,14 +14,26 @@ export default async function DocumentDetailsPage({
 }) {
   const { id } = await params;
 
+  const authSupabase =
+  await createAuthServerClient();
+
+const {
+  data: { user },
+} = await authSupabase.auth.getUser();
+
+if (!user) {
+  notFound();
+}
+
 const { data: document, error } = await supabaseServer
   .from("documents")
   .select(`
     *,
     extracted_data
   `)
-  .eq("id", id)
-  .single();
+.eq("id", id)
+.eq("user_id", user.id)
+.single();
 
   if (error || !document) {
     notFound();
