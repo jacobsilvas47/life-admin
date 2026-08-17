@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 
 import { supabaseServer } from "@/lib/supabase-server";
 import { createAuthServerClient } from "@/lib/supabase-auth-server";
+import { getEntitlements } from "@/lib/subscriptions/get-entitlements";
 
 export async function PATCH(request: Request) {
   try {
@@ -27,6 +28,18 @@ export async function PATCH(request: Request) {
 
     const body = await request.json();
 
+    /*
+     * Never trust the client to enforce
+     * subscription entitlements.
+     */
+    const entitlements =
+      await getEntitlements();
+
+    const defaultNotificationOffsets =
+      entitlements.canUseAdvancedReminders
+        ? body.defaultNotificationOffsets
+        : [7];
+
     const { data, error } =
       await supabaseServer
         .from("user_settings")
@@ -36,8 +49,9 @@ export async function PATCH(request: Request) {
           email_notifications:
             body.emailNotifications,
           default_notification_offsets:
-            body.defaultNotificationOffsets,
-          updated_at: new Date().toISOString(),
+            defaultNotificationOffsets,
+          updated_at:
+            new Date().toISOString(),
         })
         .eq("user_id", user.id)
         .select()

@@ -20,6 +20,9 @@ export type UserSubscription = {
   status: SubscriptionStatus;
   betaAccess: boolean;
   currentPeriodEnd: string | null;
+  cancelAtPeriodEnd: boolean;
+  stripeCustomerId: string | null;
+  stripeSubscriptionId: string | null;
 };
 
 export const getUserSubscription = cache(
@@ -46,7 +49,10 @@ export const getUserSubscription = cache(
         plan,
         status,
         beta_access,
-        current_period_end
+        current_period_end,
+        cancel_at_period_end,
+        stripe_customer_id,
+        stripe_subscription_id
       `)
       .eq("user_id", user.id)
       .maybeSingle();
@@ -70,6 +76,12 @@ export const getUserSubscription = cache(
         subscription.beta_access ?? false,
       currentPeriodEnd:
         subscription.current_period_end ?? null,
+      cancelAtPeriodEnd:
+        subscription.cancel_at_period_end ?? false,
+      stripeCustomerId:
+        subscription.stripe_customer_id ?? null,
+      stripeSubscriptionId:
+        subscription.stripe_subscription_id ?? null,
     };
   }
 );

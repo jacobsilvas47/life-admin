@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -53,8 +54,10 @@ const notificationOptions: NotificationOption[] = [
 
 export default function SettingsForm({
   settings,
+  canUseAdvancedReminders,
 }: {
   settings: Settings;
+  canUseAdvancedReminders: boolean;
 }) {
   const [dateFormat, setDateFormat] = useState(
     settings.date_format
@@ -73,52 +76,61 @@ export default function SettingsForm({
     defaultNotificationOffsets,
     setDefaultNotificationOffsets,
   ] = useState<number[]>(
-    settings.default_notification_offsets ?? [
-      30,
-      7,
-      1,
-    ]
+    canUseAdvancedReminders
+      ? settings.default_notification_offsets ?? [
+          30,
+          7,
+          1,
+        ]
+      : [7]
   );
 
   const [isSaving, setIsSaving] =
     useState(false);
 
-    const [savedSettings, setSavedSettings] =
-  useState({
-    dateFormat: settings.date_format,
-    timezone: settings.timezone,
-    emailNotifications:
-      settings.email_notifications,
-    defaultNotificationOffsets: [
-      ...(settings.default_notification_offsets ??
-        [30, 7, 1]),
-    ].sort((a, b) => b - a),
-  });
+  const [savedSettings, setSavedSettings] =
+    useState({
+      dateFormat: settings.date_format,
+      timezone: settings.timezone,
+      emailNotifications:
+        settings.email_notifications,
+      defaultNotificationOffsets:
+        canUseAdvancedReminders
+          ? [
+              ...(settings.default_notification_offsets ??
+                [30, 7, 1]),
+            ].sort((a, b) => b - a)
+          : [7],
+    });
 
-const hasChanges = useMemo(() => {
-  const currentOffsets = [
-    ...defaultNotificationOffsets,
-  ].sort((a, b) => b - a);
+  const hasChanges = useMemo(() => {
+    const currentOffsets = [
+      ...defaultNotificationOffsets,
+    ].sort((a, b) => b - a);
 
-  return (
-    dateFormat !== savedSettings.dateFormat ||
-    timezone !== savedSettings.timezone ||
-    emailNotifications !==
-      savedSettings.emailNotifications ||
-    JSON.stringify(currentOffsets) !==
-      JSON.stringify(
-        savedSettings.defaultNotificationOffsets
-      )
-  );
-}, [
-  dateFormat,
-  timezone,
-  emailNotifications,
-  defaultNotificationOffsets,
-  savedSettings,
-]);
+    return (
+      dateFormat !== savedSettings.dateFormat ||
+      timezone !== savedSettings.timezone ||
+      emailNotifications !==
+        savedSettings.emailNotifications ||
+      JSON.stringify(currentOffsets) !==
+        JSON.stringify(
+          savedSettings.defaultNotificationOffsets
+        )
+    );
+  }, [
+    dateFormat,
+    timezone,
+    emailNotifications,
+    defaultNotificationOffsets,
+    savedSettings,
+  ]);
 
   function toggleOffset(offset: number) {
+    if (!canUseAdvancedReminders) {
+      return;
+    }
+
     setDefaultNotificationOffsets((current) =>
       current.includes(offset)
         ? current.filter(
@@ -137,19 +149,26 @@ const hasChanges = useMemo(() => {
 
     setIsSaving(true);
 
+    const offsetsToSave =
+      canUseAdvancedReminders
+        ? defaultNotificationOffsets
+        : [7];
+
     try {
       const response = await fetch(
         "/api/settings",
         {
           method: "PATCH",
           headers: {
-            "Content-Type": "application/json",
+            "Content-Type":
+              "application/json",
           },
           body: JSON.stringify({
             dateFormat,
             timezone,
             emailNotifications,
-            defaultNotificationOffsets,
+            defaultNotificationOffsets:
+              offsetsToSave,
           }),
         }
       );
@@ -163,12 +182,16 @@ const hasChanges = useMemo(() => {
         );
       }
 
+      setDefaultNotificationOffsets(
+        offsetsToSave
+      );
+
       setSavedSettings({
         dateFormat,
         timezone,
         emailNotifications,
         defaultNotificationOffsets: [
-          ...defaultNotificationOffsets,
+          ...offsetsToSave,
         ].sort((a, b) => b - a),
       });
 
@@ -192,7 +215,8 @@ const hasChanges = useMemo(() => {
         </h2>
 
         <p className="mt-1 text-sm text-muted-foreground">
-          Control how dates and times appear in Life Admin.
+          Control how dates and times appear in
+          Life Admin.
         </p>
 
         <div className="mt-6 space-y-5">
@@ -204,7 +228,9 @@ const hasChanges = useMemo(() => {
             <select
               value={dateFormat}
               onChange={(event) =>
-                setDateFormat(event.target.value)
+                setDateFormat(
+                  event.target.value
+                )
               }
               className="w-full rounded-lg border bg-background p-3"
             >
@@ -230,7 +256,9 @@ const hasChanges = useMemo(() => {
             <select
               value={timezone}
               onChange={(event) =>
-                setTimezone(event.target.value)
+                setTimezone(
+                  event.target.value
+                )
               }
               className="w-full rounded-lg border bg-background p-3"
             >
@@ -268,7 +296,8 @@ const hasChanges = useMemo(() => {
         </h2>
 
         <p className="mt-1 text-sm text-muted-foreground">
-          Choose how reminder notifications should work.
+          Choose how reminder notifications
+          should work.
         </p>
 
         <div className="mt-6 space-y-6">
@@ -279,7 +308,8 @@ const hasChanges = useMemo(() => {
               </p>
 
               <p className="text-sm text-muted-foreground">
-                Receive reminder notifications by email.
+                Receive reminder notifications
+                by email.
               </p>
             </div>
 
@@ -296,38 +326,75 @@ const hasChanges = useMemo(() => {
           </label>
 
           <div>
-            <p className="font-medium">
-              Default Reminder Schedule
-            </p>
+            <div className="flex items-center gap-2">
+              <p className="font-medium">
+                Default Reminder Schedule
+              </p>
 
-            <p className="mt-1 text-sm text-muted-foreground">
-              New reminders will use these notification times by default.
-            </p>
-
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              {notificationOptions.map(
-                (option) => (
-                  <label
-                    key={option.value}
-                    className="flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition hover:border-primary hover:bg-muted/40"
-                  >
-                    <input
-                      type="checkbox"
-                      checked={defaultNotificationOffsets.includes(
-                        option.value
-                      )}
-                      onChange={() =>
-                        toggleOffset(option.value)
-                      }
-                    />
-
-                    <span className="text-sm">
-                      {option.label}
-                    </span>
-                  </label>
-                )
+              {!canUseAdvancedReminders && (
+                <span className="rounded-full bg-black px-2 py-0.5 text-xs font-medium text-white">
+                  Premium
+                </span>
               )}
             </div>
+
+            <p className="mt-1 text-sm text-muted-foreground">
+              {canUseAdvancedReminders
+                ? "New reminders will use these notification times by default."
+                : "Free reminders notify you 7 days before the due date. Premium lets you customize the default schedule."}
+            </p>
+
+            {canUseAdvancedReminders ? (
+              <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                {notificationOptions.map(
+                  (option) => (
+                    <label
+                      key={option.value}
+                      className="flex cursor-pointer items-center gap-3 rounded-lg border p-3 transition hover:border-primary hover:bg-muted/40"
+                    >
+                      <input
+                        type="checkbox"
+                        checked={defaultNotificationOffsets.includes(
+                          option.value
+                        )}
+                        onChange={() =>
+                          toggleOffset(
+                            option.value
+                          )
+                        }
+                      />
+
+                      <span className="text-sm">
+                        {option.label}
+                      </span>
+                    </label>
+                  )
+                )}
+              </div>
+            ) : (
+              <div className="mt-4 space-y-3">
+                <div className="flex items-center gap-3 rounded-lg border bg-muted/30 p-3">
+                  <input
+                    type="checkbox"
+                    checked
+                    disabled
+                    readOnly
+                  />
+
+                  <span className="text-sm">
+                    7 days before
+                  </span>
+                </div>
+
+                <Link
+                  href="/upgrade"
+                  className="inline-flex text-sm font-medium underline underline-offset-4"
+                >
+                  Unlock custom reminder
+                  schedules with Premium
+                </Link>
+              </div>
+            )}
           </div>
         </div>
       </section>
@@ -336,14 +403,16 @@ const hasChanges = useMemo(() => {
         <button
           type="button"
           onClick={saveSettings}
-          disabled={isSaving || !hasChanges}
+          disabled={
+            isSaving || !hasChanges
+          }
           className="rounded-lg bg-black px-6 py-3 font-medium text-white transition hover:bg-black/90 disabled:cursor-not-allowed disabled:opacity-50"
         >
           {isSaving
-        ? "Saving..."
-        : hasChanges
-          ? "Save Changes"
-          : "Saved"}
+            ? "Saving..."
+            : hasChanges
+              ? "Save Changes"
+              : "Saved"}
         </button>
       </div>
     </div>

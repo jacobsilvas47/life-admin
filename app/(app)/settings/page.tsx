@@ -5,11 +5,31 @@ import { getUserSubscription } from "@/lib/subscriptions/get-user-subscription";
 import { supabaseServer } from "@/lib/supabase-server";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
+import ManageSubscriptionButton from "@/components/subscriptions/manage-subscription-button";
+
+function formatBillingDate(
+  dateString: string | null
+) {
+  if (!dateString) {
+    return null;
+  }
+
+  return new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(new Date(dateString));
+}
 
 export default async function SettingsPage() {
   const settings = await getUserSettings();
   const subscription = await getUserSubscription();
   const entitlements = await getEntitlements();
+
+  const billingDate = formatBillingDate(
+  subscription?.currentPeriodEnd ?? null
+);
 
   const { count: documentCount } =
   await supabaseServer
@@ -54,14 +74,41 @@ export default async function SettingsPage() {
               </span>
             </div>
 
-            <p className="mt-2 text-sm text-muted-foreground">
-              {entitlements.isPremium
-                ? "You have access to all Life Admin Premium features."
-                : "You're currently using the Life Admin Free plan."}
-            </p>
+            <div className="mt-2 space-y-1">
+              <p className="text-sm text-muted-foreground">
+                {entitlements.isPremium
+                  ? "You have access to all Life Admin Premium features."
+                  : "You're currently using the Life Admin Free plan."}
+              </p>
+
+              {subscription?.stripeSubscriptionId &&
+                billingDate && (
+                  <p className="text-sm font-medium">
+                    {subscription.cancelAtPeriodEnd
+                      ? `Cancels ${billingDate}`
+                      : `Renews ${billingDate}`}
+                  </p>
+                )}
+
+              {entitlements.isPremium &&
+                subscription?.betaAccess &&
+                !subscription.stripeSubscriptionId && (
+                  <p className="text-sm font-medium">
+                    Premium beta access
+                  </p>
+                )}
+            </div>
           </div>
 
-          {!entitlements.isPremium && (
+          {entitlements.isPremium ? (
+            subscription?.stripeCustomerId ? (
+              <ManageSubscriptionButton />
+            ) : (
+              <span className="text-sm text-muted-foreground">
+                Premium access
+              </span>
+            )
+          ) : (
             <Button asChild>
               <Link href="/upgrade">
                 Upgrade to Premium
@@ -142,7 +189,12 @@ export default async function SettingsPage() {
         </div>
       </section>
 
-      <SettingsForm settings={settings} />
+      <SettingsForm
+        settings={settings}
+        canUseAdvancedReminders={
+          entitlements.canUseAdvancedReminders
+        }
+      />
     </main>
   );
 }

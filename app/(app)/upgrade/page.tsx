@@ -8,6 +8,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { Check } from "lucide-react";
+import UpgradeButton from "@/components/subscriptions/upgrade-button";
 
 const premiumFeatures = [
   "Unlimited document storage",
@@ -136,16 +137,10 @@ export default function UpgradePage() {
               ))}
             </div>
 
-            <Button
-              type="button"
-              disabled
-              className="w-full"
-            >
-              Upgrade to Premium
-            </Button>
+            <UpgradeButton />
 
             <p className="text-center text-xs text-muted-foreground">
-              Payments are not enabled yet.
+              $9.99 per month. Cancel anytime.
             </p>
           </CardContent>
         </Card>

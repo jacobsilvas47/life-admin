@@ -2,6 +2,7 @@ import { supabaseServer } from "@/lib/supabase-server";
 import { createAuthServerClient } from "@/lib/supabase-auth-server";
 import { createActivity } from "@/lib/activity/create-activity";
 import { getUserSettings } from "@/lib/settings/get-user-settings";
+import { getEntitlements } from "@/lib/subscriptions/get-entitlements";
 
 type CreateReminderInput = {
   title: string;
@@ -114,10 +115,13 @@ export async function createReminder(
    * authenticated user.
    */
   const settings = await getUserSettings();
+  const entitlements = await getEntitlements();
 
   const notificationOffsets =
-    input.notificationOffsets ??
-    settings.default_notification_offsets;
+    entitlements.canUseAdvancedReminders
+      ? input.notificationOffsets ??
+        settings.default_notification_offsets
+      : [7];
 
   const { data: reminder, error } =
     await supabaseServer
