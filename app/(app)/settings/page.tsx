@@ -81,7 +81,8 @@ export default async function SettingsPage() {
                   : "You're currently using the Life Admin Free plan."}
               </p>
 
-              {subscription?.stripeSubscriptionId &&
+              {entitlements.isPremium &&
+                subscription?.stripeSubscriptionId &&
                 billingDate && (
                   <p className="text-sm font-medium">
                     {subscription.cancelAtPeriodEnd
