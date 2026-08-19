@@ -108,20 +108,19 @@ export default function UploadDropzone() {
     const result = await response.json();
 
     if (!response.ok || !result.success) {
-      if (
-        result.code ===
-        "DOCUMENT_LIMIT_REACHED"
-      ) {
-        toast.error(result.error);
-        return;
-      }
-
-      throw new Error(
-        result.error ??
-          "Failed to create import session."
-      );
+    if (
+      result.code === "DOCUMENT_LIMIT_REACHED" ||
+      result.code === "DOCUMENT_LIMIT_EXCEEDED"
+    ) {
+      toast.error(result.error);
+      return;
     }
 
+    throw new Error(
+      result.error ??
+        "Failed to create import session."
+    );
+  }
     importSession = result.session;
   } catch (error: unknown) {
     const message =

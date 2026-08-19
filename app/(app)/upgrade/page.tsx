@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import { Check } from "lucide-react";
 import UpgradeButton from "@/components/subscriptions/upgrade-button";
+import { getEntitlements } from "@/lib/subscriptions/get-entitlements";
 
 const premiumFeatures = [
   "Unlimited document storage",
@@ -26,7 +27,8 @@ const freeFeatures = [
   "Basic reminders",
 ];
 
-export default function UpgradePage() {
+export default async function UpgradePage() {
+  const entitlements = await getEntitlements();
   return (
     <main className="mx-auto max-w-6xl space-y-10 p-8">
       <div className="mx-auto max-w-3xl text-center">
@@ -110,8 +112,8 @@ export default function UpgradePage() {
                 </div>
 
                 <p className="mt-2 text-muted-foreground">
-                  For people who want Life Admin
-                  to manage more of their life.
+                  Unlimited organization and smarter
+                  reminders for everything that matters.
                 </p>
               </div>
 
@@ -137,10 +139,21 @@ export default function UpgradePage() {
               ))}
             </div>
 
-            <UpgradeButton />
+            {entitlements.isPremium ? (
+              <Button
+                disabled
+                className="w-full"
+              >
+                Your Current Plan
+              </Button>
+            ) : (
+              <UpgradeButton />
+            )}
 
             <p className="text-center text-xs text-muted-foreground">
-              $9.99 per month. Cancel anytime.
+              {entitlements.isPremium
+                ? "You already have access to Life Admin Premium."
+                : "$9.99 per month. Cancel anytime."}
             </p>
           </CardContent>
         </Card>

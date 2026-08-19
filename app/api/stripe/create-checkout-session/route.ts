@@ -142,7 +142,7 @@ export async function POST(request: Request) {
         ],
 
         success_url:
-          `${origin}/settings?checkout=success`,
+          `${origin}/upgrade/success`,
 
         cancel_url:
           `${origin}/upgrade?checkout=cancelled`,
