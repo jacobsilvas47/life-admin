@@ -141,7 +141,7 @@ export default function PersonalRecordsList({
 
   return (
     <>
-      <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-stretch">
         <div className="flex-1">
           <SearchBar
             value={search}
@@ -155,7 +155,7 @@ export default function PersonalRecordsList({
             type="button"
             onClick={() => setSelectMode(true)}
             disabled={filteredRecords.length === 0}
-            className="self-stretch rounded-lg border bg-background px-5 text-sm font-medium transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg border bg-background px-5 py-3 text-sm font-medium transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 sm:py-0"
           >
             Select
           </button>
@@ -213,19 +213,15 @@ export default function PersonalRecordsList({
         </p>
       )}
 
-      {filteredRecords.length === 0 ? (
-        <Card>
-          <CardContent className="py-16 text-center">
-            <h2 className="text-xl font-semibold">
-              No matching records
-            </h2>
-
-            <p className="mt-2 text-muted-foreground">
-              Try a different search.
+        {filteredRecords.length === 0 ? (
+          <div className="rounded-xl border p-8 text-center">
+            <p className="text-sm text-muted-foreground">
+              {records.length === 0
+                ? "No personal records yet."
+                : "No matching personal records found."}
             </p>
-          </CardContent>
-        </Card>
-      ) : (
+          </div>
+        ) : (
         <div className="grid gap-4">
           {filteredRecords.map((record) => {
             const selected =

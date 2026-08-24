@@ -166,7 +166,7 @@ export default function DocumentsList({
 
   return (
     <>
-      <div className="mb-4 flex items-stretch gap-3">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-stretch">
         <div className="min-w-0 flex-1">
           <SearchBar
             value={search}
@@ -180,7 +180,7 @@ export default function DocumentsList({
             type="button"
             onClick={() => setSelectMode(true)}
             disabled={filteredDocuments.length === 0}
-            className="rounded-lg border bg-background px-5 text-sm font-medium transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg border bg-background px-5 py-3 text-sm font-medium transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 sm:py-0"
           >
             Select
           </button>
@@ -290,27 +290,25 @@ export default function DocumentsList({
             return (
               <div
                 key={doc.id}
-                className="flex items-center justify-between rounded-lg border p-4 transition hover:bg-muted/30"
+                className="flex flex-col gap-4 rounded-lg border p-4 transition hover:bg-muted/30 sm:flex-row sm:items-center sm:justify-between"
               >
-                <div className="min-w-0">
-                  <p className="truncate font-semibold">
+                <div className="min-w-0 flex-1">
+                  <p className="break-words font-semibold sm:truncate">
                     {doc.file_name}
                   </p>
 
-                  <p className="text-sm text-muted-foreground">
+                  <p className="mt-1 text-sm text-muted-foreground">
                     Status: {doc.status}
                   </p>
                 </div>
 
-                <div className="flex items-center gap-4">
+                <div className="flex flex-wrap items-center gap-2 sm:flex-nowrap sm:gap-4">
                   <Button
                     asChild
                     variant="ghost"
                     size="sm"
                   >
-                    <Link
-                      href={`/documents/${doc.id}`}
-                    >
+                    <Link href={`/documents/${doc.id}`}>
                       View
                     </Link>
                   </Button>

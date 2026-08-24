@@ -7,6 +7,43 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { formatDate } from "@/lib/date/format-date";
 
+function getActivityDate(dateString: string) {
+  const activityDate = new Date(dateString);
+  const today = new Date();
+
+  const activityDay = new Date(
+    activityDate.getFullYear(),
+    activityDate.getMonth(),
+    activityDate.getDate()
+  );
+
+  const todayDay = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate()
+  );
+
+  const diffDays = Math.round(
+    (todayDay.getTime() - activityDay.getTime()) /
+      (1000 * 60 * 60 * 24)
+  );
+
+  if (diffDays === 0) {
+    return "Today";
+  }
+
+  if (diffDays === 1) {
+    return "Yesterday";
+  }
+
+  return activityDate.toLocaleDateString(
+    "en-US",
+    {
+      month: "short",
+      day: "numeric",
+    }
+  );
+}
 
 export default async function DashboardPage() {
     const authSupabase = await createAuthServerClient();
@@ -18,6 +55,21 @@ export default async function DashboardPage() {
     if (!user) {
       return null;
     }
+
+    const firstName =
+      typeof user.user_metadata?.first_name === "string"
+        ? user.user_metadata.first_name.trim()
+        : "";
+
+    const currentHour = new Date().getHours();
+
+    const greeting =
+      currentHour < 12
+        ? "Good morning"
+        : currentHour < 17
+        ? "Good afternoon"
+        : "Good evening";
+
   const now = new Date();
 
   const thirtyDaysFromNow = new Date();
@@ -99,10 +151,19 @@ export default async function DashboardPage() {
   }
 
   const documentCount = documentsResult.count ?? 0;
+
   const assetCount = assetsResult.count ?? 0;
+
   const personalRecordCount =
     personalRecordsResult.count ?? 0;
+
+  const isNewUser =
+    documentCount === 0 &&
+    assetCount === 0 &&
+    personalRecordCount === 0;
+
   const reminderCount = remindersResult.count ?? 0;
+
   const expiringSoonCount =
     expiringSoonResult.count ?? 0;
 
@@ -117,11 +178,14 @@ export default async function DashboardPage() {
       <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
         <div>
           <p className="text-sm text-muted-foreground">
-            Good morning, Jacob
+            {greeting}
+            {firstName ? `, ${firstName}` : ""}
           </p>
 
           <h1 className="text-3xl font-bold tracking-tight">
-            Here&apos;s what needs your attention.
+            {isNewUser
+              ? "Welcome to Life Admin."
+              : "Here's what needs your attention."}
           </h1>
         </div>
 
@@ -151,6 +215,73 @@ export default async function DashboardPage() {
           </Button>
         </div>
       </div>
+
+      {isNewUser && (
+        <Card className="mt-8">
+          <CardContent className="p-8">
+            <div className="max-w-2xl">
+              <p className="text-sm font-medium text-muted-foreground">
+                GET STARTED
+              </p>
+
+              <h2 className="mt-2 text-2xl font-semibold">
+                Upload your first document
+              </h2>
+
+              <p className="mt-3 text-muted-foreground">
+                Add a receipt, warranty, manual, ID, or
+                other important document. Life Admin will
+                help organize the important information
+                and keep everything connected.
+              </p>
+
+              <Button
+                asChild
+                className="mt-6"
+              >
+                <Link href="/upload">
+                  Upload Your First Document
+                </Link>
+              </Button>
+            </div>
+
+            <div className="mt-8 grid gap-4 border-t pt-6 md:grid-cols-3">
+              <div>
+                <p className="font-medium">
+                  1. Upload
+                </p>
+
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Add an important document from your
+                  life.
+                </p>
+              </div>
+
+              <div>
+                <p className="font-medium">
+                  2. Review
+                </p>
+
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Life Admin extracts the important
+                  details for you.
+                </p>
+              </div>
+
+              <div>
+                <p className="font-medium">
+                  3. Stay organized
+                </p>
+
+                <p className="mt-1 text-sm text-muted-foreground">
+                  Keep documents, assets, records, and
+                  reminders connected.
+                </p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
      <div className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-5">
       <Link
@@ -334,7 +465,7 @@ export default async function DashboardPage() {
                   </p>
 
                   <p className="text-xs text-muted-foreground">
-                    {getRelativeDate(activity.created_at).text}
+                    {getActivityDate(activity.created_at)}
                   </p>
                 </div>
               ))

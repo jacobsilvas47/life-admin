@@ -22,7 +22,7 @@ export default async function AppLayout({
     <main className="flex min-h-screen bg-gray-50">
       <AppSidebar />
 
-      <section className="flex-1 px-6 py-6 md:px-10">
+      <section className="min-w-0 flex-1 px-4 pb-6 pt-20 sm:px-6 md:px-10 md:py-6">
         {children}
       </section>
     </main>

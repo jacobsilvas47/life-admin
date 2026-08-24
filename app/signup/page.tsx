@@ -9,7 +9,8 @@ import { createClient } from "@/lib/supabase";
 
 export default function SignupPage() {
   const router = useRouter();
-
+  const [firstName, setFirstName] =
+    useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] =
     useState("");
@@ -24,6 +25,11 @@ export default function SignupPage() {
     event.preventDefault();
 
     if (isLoading) return;
+
+    if (!firstName.trim()) {
+      toast.error("Please enter your first name.");
+      return;
+    }
 
     if (password !== confirmPassword) {
       toast.error("Passwords do not match.");
@@ -42,13 +48,18 @@ export default function SignupPage() {
     try {
       const supabase = createClient();
 
-      const {
-        data,
-        error,
-      } = await supabase.auth.signUp({
-        email,
-        password,
-      });
+    const {
+      data,
+      error,
+    } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          first_name: firstName.trim(),
+        },
+      },
+    });
 
       if (error) {
         throw error;
@@ -100,6 +111,27 @@ export default function SignupPage() {
           onSubmit={handleSignup}
           className="space-y-5"
         >
+            <div>
+              <label
+                htmlFor="first-name"
+                className="mb-2 block font-medium"
+              >
+                First Name
+              </label>
+
+              <input
+                id="first-name"
+                type="text"
+                autoComplete="given-name"
+                required
+                value={firstName}
+                onChange={(event) =>
+                  setFirstName(event.target.value)
+                }
+                placeholder="Your first name"
+                className="w-full rounded-lg border bg-background p-3"
+              />
+            </div>
           <div>
             <label
               htmlFor="email"

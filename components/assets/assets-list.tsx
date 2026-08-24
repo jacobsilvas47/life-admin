@@ -142,7 +142,7 @@ export default function AssetsList({
 
   return (
     <>
-      <div className="mb-4 flex items-stretch gap-3">
+      <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-stretch">
         <div className="min-w-0 flex-1">
           <SearchBar
             value={search}
@@ -156,7 +156,7 @@ export default function AssetsList({
             type="button"
             onClick={() => setSelectMode(true)}
             disabled={filteredAssets.length === 0}
-            className="rounded-lg border bg-background px-5 text-sm font-medium transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50"
+            className="rounded-lg border bg-background px-5 py-3 text-sm font-medium transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-50 sm:py-0"
           >
             Select
           </button>

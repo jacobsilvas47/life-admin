@@ -3,33 +3,45 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
-import { createClient } from "@/lib/supabase";
-import Link from "next/link";
 
-export default function LoginPage() {
+import { createClient } from "@/lib/supabase";
+
+export default function ResetPasswordPage() {
   const router = useRouter();
 
-  const supabase = createClient();
-
-  const [email, setEmail] = useState("");
   const [password, setPassword] =
+    useState("");
+  const [confirmPassword, setConfirmPassword] =
     useState("");
   const [isLoading, setIsLoading] =
     useState(false);
 
-  async function handleLogin(
+  async function handleSubmit(
     event: React.FormEvent<HTMLFormElement>
   ) {
     event.preventDefault();
 
     if (isLoading) return;
 
+    if (password !== confirmPassword) {
+      toast.error("Passwords do not match.");
+      return;
+    }
+
+    if (password.length < 8) {
+      toast.error(
+        "Password must be at least 8 characters."
+      );
+      return;
+    }
+
     setIsLoading(true);
 
     try {
+      const supabase = createClient();
+
       const { error } =
-        await supabase.auth.signInWithPassword({
-          email,
+        await supabase.auth.updateUser({
           password,
         });
 
@@ -37,15 +49,24 @@ export default function LoginPage() {
         throw error;
       }
 
-      toast.success("Welcome back.");
+      toast.success(
+        "Password updated successfully."
+      );
 
-      router.push("/dashboard");
+      /*
+       * Sign out the recovery session so the
+       * user can sign in normally with their
+       * new password.
+       */
+      await supabase.auth.signOut();
+
+    router.push("/login");  
       router.refresh();
     } catch (error) {
       toast.error(
         error instanceof Error
           ? error.message
-          : "Could not sign in."
+          : "Could not update password."
       );
     } finally {
       setIsLoading(false);
@@ -61,64 +82,64 @@ export default function LoginPage() {
           </p>
 
           <h1 className="mt-1 text-3xl font-bold">
-            Welcome back
+            Choose a new password
           </h1>
 
           <p className="mt-2 text-muted-foreground">
-            Sign in to manage your life in one place.
+            Enter a new password for your Life
+            Admin account.
           </p>
         </div>
 
         <form
-          onSubmit={handleLogin}
+          onSubmit={handleSubmit}
           className="space-y-5"
         >
           <div>
             <label
-              htmlFor="email"
+              htmlFor="password"
               className="mb-2 block font-medium"
             >
-              Email
+              New Password
             </label>
 
             <input
-              id="email"
-              type="email"
-              autoComplete="email"
-              required
-              value={email}
-              onChange={(event) =>
-                setEmail(event.target.value)
-              }
-              placeholder="you@example.com"
-              className="w-full rounded-lg border bg-background p-3"
-            />
-          </div>
-
-          <div>
-            <div className="mb-2 flex items-center justify-between">
-              <label
-                htmlFor="password"
-                className="font-medium"
-              >
-                Password
-              </label>
-
-              <Link
-                href="/forgot-password"
-                className="text-sm font-medium text-muted-foreground hover:text-foreground hover:underline"
-              >
-                Forgot password?
-              </Link>
-            </div>
-            <input
               id="password"
               type="password"
-              autoComplete="current-password"
+              autoComplete="new-password"
               required
+              minLength={8}
               value={password}
               onChange={(event) =>
                 setPassword(event.target.value)
+              }
+              className="w-full rounded-lg border bg-background p-3"
+            />
+
+            <p className="mt-2 text-xs text-muted-foreground">
+              Use at least 8 characters.
+            </p>
+          </div>
+
+          <div>
+            <label
+              htmlFor="confirm-password"
+              className="mb-2 block font-medium"
+            >
+              Confirm New Password
+            </label>
+
+            <input
+              id="confirm-password"
+              type="password"
+              autoComplete="new-password"
+              required
+              minLength={8}
+              value={confirmPassword}
+              onChange={(event) =>
+                setConfirmPassword(
+                  event.target.value
+                )
               }
               className="w-full rounded-lg border bg-background p-3"
             />
@@ -130,20 +151,10 @@ export default function LoginPage() {
             className="w-full rounded-lg bg-black px-6 py-3 font-medium text-white transition hover:bg-black/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
             {isLoading
-              ? "Signing in..."
-              : "Sign In"}
+              ? "Updating password..."
+              : "Update Password"}
           </button>
         </form>
-
-        <p className="mt-6 text-center text-sm text-muted-foreground">
-        Don&apos;t have an account?{" "}
-        <Link
-            href="/signup"
-            className="font-medium text-foreground hover:underline"
-        >
-            Create one
-        </Link>
-        </p>
       </div>
     </main>
   );
